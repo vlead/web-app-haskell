@@ -1,0 +1,75 @@
+#+TITLE: Models - Using Persistent Database
+
+* Introduction
+
+The data model- that are stored in the database- are defined here. 
+
+We define here a single database that stores a value - User.
+** User
+
+   - id
+   - name
+   - email
+   - roles
+
+* Language Extensions and Imports
+  
+#+NAME: extns_and_imports
+#+BEGIN_SRC haskell 
+{-# LANGUAGE EmptyDataDecls             #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE QuasiQuotes                #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeFamilies               #-}
+import           Control.Monad.IO.Class  (liftIO)
+import           Database.Persist 
+import           Database.Persist.Sqlite
+import           Database.Persist.TH
+
+#+END_SRC
+* User Model
+
+#+NAME: user_model
+#+BEGIN_SRC haskell
+
+share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
+User
+  Name String
+  Email String
+  Roles [String]
+  deriving Eq Read Show
+|]
+
+#+END_SRC
+* User Instances Of
+
+#+NAME: user_instances_of
+#+BEGIN_SRC haskell
+instance FromJSON User where
+  parseJSON = withObject "User" $ \ v ->
+    User <$> v .: "name"
+         <*> v .: "email"
+         <*> v .: "roles"
+
+
+instance ToJSON User where
+  toJSON (User name email roles) =
+    object [ "name" .= name
+           , "email"  .= email
+           , "roles" .= roles]
+
+
+
+#+END_SRC
+* Tangling 
+
+#+NAME: tangling
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle models.hs
+<<extns_and_imports>>
+<<user_model>>
+<<user_instances_of>>
+#+END_SRC
