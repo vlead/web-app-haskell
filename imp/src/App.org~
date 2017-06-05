@@ -120,15 +120,37 @@ import           Models
 
 #+NAME: server
 #+BEGIN_SRC haskell
-
-server :: ConnectionPool -> Server Api
+server :: ConnectionPool -> Server userAPI
 server pool =
-  showUserHandler :<|> addUserHandler
+  showUsersHandler :<|> addUsersHandler
   where
-    showUserHandler newUser = liftIO $ userShow newUser
-    addUserHandler newUser = liftIO $ userAdd newUser
+    showUsersHandler = liftIO $ showUsers
+    addUserHandler = return newUser
 
+-- here, we assume that there are non-zero users in the database
+-- i'll put a maybe and case handling later
+-- addUserHandler is not yet defined
+
+-- function that takes the server function and returns a WAI application 
 app :: ConnectionPool -> Application
-app pool = serve api $ server pool
+app pool = serve UserAPI $ server pool
+
+
+-- to integrate Persist backend with API
+-- createSqlitePool creates a pool of database connections
+mkApp :: FilePath -> IO Application
+mkApp sqliteFile = do
+  pool <- runStderrLoggingT $ do
+    createSqlitePool (cs sqliteFile) 5
+
+  runSqlPool (runMigration migrateAll) pool
+  return $ app pool
+
+
+-- to run the SQL database
+run :: FilePath -> IO
+run sqliteFile =
+  Warp.run 8000 =<< mkApp sqliteFile
+
 
 #+END_SRC

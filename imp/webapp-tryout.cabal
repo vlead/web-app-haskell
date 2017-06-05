@@ -20,11 +20,24 @@ executable webapp-tryout
   build-depends:       base >= 4.7 && < 5
                        -- custom dependencies
                      , aeson-compat
+                     , base-compat
+                     , mtl
+                     , attoparsec
+                     , bytestring
+                     , string-conversions 
                      , lucid
+                     , time
+                     , http-media
+                     , directory 
                      , wai
                      , warp
+                     , servant
                      , servant-server
                      , blaze-markup
                      , blaze-html
-                
-                     
+                     , persistent
+                     , persistent-sqlite
+                     , persistent-template
+                     , aeson
+                     , text
+                     , monad-logger

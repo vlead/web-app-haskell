@@ -1,0 +1,163 @@
+#+TITLE: App
+
+
+* Introduction
+
+Controllers for handling the following routes :
+
+** addUser
+
+   - URL :: /addUser
+
+   - Method :: POST
+
+   - Data Params ::
+     {
+      'email': '<value>',
+      'name': '<value>',
+      'roles' : <value>
+     }
+
+   - Success Response ::
+     + Code: 200
+
+     + Content:
+       #+BEGIN_EXAMPLE
+       {
+         "email": {
+         "email": "xyz@gmail.com",
+         "id": "2"
+          },
+       "id": "2",
+       "name": {
+       "id": "2",
+       "name": "xyz"
+          },
+       "roles": [
+             {
+            "id": "2",
+            "name": "user"
+             }
+           ]
+       }
+       
+       #+END_EXAMPLE
+
+** showUser
+
+
+  - URL :: /showUsers
+  - Method :: GET
+
+  - URL Params ::  None
+       
+  - Success Response ::
+    + Code: 200
+
+    + Content ::
+      #+BEGIN_EXAMPLE
+      [
+	{
+	  "id": "1",
+	  "email": {
+	    "email": "xyz@vlabs.ac.in",
+	    "id": "1"
+	  },
+	  "roles": [],
+	  "name": {
+	    "name": "admin",
+	    "id": "1"
+	  }
+	},
+	{
+	  "id": "2",
+	  "email": {
+	    "email": "abc@gmail.com",
+	    "id": "2"
+	  },
+	  "roles": [],
+	  "name": {
+	    "name": "abc",
+	    "id": "2"
+	  }
+	}
+      ]
+      #+END_EXAMPLE
+* Language Extensions and Imports
+
+#+NAME: extns_and_imports
+#+BEGIN_SRC haskell
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE TypeOperators     #-}
+
+module App where
+
+import           Control.Monad.IO.Class
+import           Control.Monad.Logger (runStderrLoggingT)
+
+import           Data.String.Conversions
+
+import           Database.Persist
+import           Database.Persist.Sql
+import           Database.Persist.Sqlite
+
+import           Network.Wai
+import           Network.Wai.Handler.Warp as Warp
+
+import           Servant
+
+import           Data.Text
+
+import           Api
+import           Models
+
+#+END_SRC
+* Server handlers
+
+#+NAME: server
+#+BEGIN_SRC haskell
+server :: ConnectionPool -> Server userAPI
+server pool =
+  showUsersHandler :<|> addUsersHandler
+  where
+    showUsersHandler = liftIO $ showUsers
+    addUserHandler = return newUser
+
+-- here, we assume that there are non-zero users in the database
+-- i'll put a maybe and case handling later
+-- addUserHandler is not yet defined
+
+-- function that takes the server function and returns a WAI application 
+app :: ConnectionPool -> Application
+app pool = serve UserAPI $ server pool
+
+
+-- to integrate Persist backend with API
+-- createSqlitePool creates a pool of database connections
+mkApp :: FilePath -> IO Application
+mkApp sqliteFile = do
+  pool <- runStderrLoggingT $ do
+    createSqlitePool (cs sqliteFile) 5
+
+  runSqlPool (runMigration migrateAll) pool
+  return $ app pool
+
+
+-- to run the SQL database
+run :: FilePath -> IO
+run sqliteFile =
+  Warp.run 8000 =<< mkApp sqliteFile
+
+
+#+END_SRC
+* Tangling
+
+#+NAME: tangling
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle App.hs
+<<extns_and_imports>>
+<<server>>
+#+END_SRC
