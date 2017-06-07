@@ -3,9 +3,14 @@
 
 * Introduction
 
-  - This is an example web API written using Servant.
-  - The API has two routes- =showUsers= and =addUsers=
-  - The API interacts with a sqlite database
+This is an example web API written using =Servant= , that interacts with a sqlite
+database via the haskell library =Persistent=.
+
+The API has three routes :
+
+** showUsers
+** addUser
+** deleteUser
 
 * Language Extensions and Imports 
 
@@ -56,18 +61,18 @@ import Models
 import Servant.API
 #+END_SRC
 
-* API Types
+* API 
 
 #+NAME: api_types
 #+BEGIN_SRC haskell 
 type UserAPI = "showUsers" :> Get '[JSON] [User]
              :<|> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (Key User))
-             
+             :<|> "deleteUser" :> ReqBody '[JSON] UserId :> Post '[JSON] (Maybe (Key User))
   
   
 
 #+END_SRC
-* Run
+* Type Variable for API
 
 #+NAME: run
 #+BEGIN_SRC haskell

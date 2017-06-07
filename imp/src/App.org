@@ -123,13 +123,13 @@ import           Models
 #+BEGIN_SRC haskell
 server :: ConnectionPool -> Server UserAPI
 server pool =
-  showUsersHandler :<|> addUserHandler
+  showUsersHandler
+  :<|> addUserHandler
+  :<|> deleteUserHandler
   where
---    showUsersHandler :: ConnectionPool -> Maybe ([User])
     showUsersHandler = liftIO $ showAllUsersHelper pool 
-
---    addUsersHandler :: User -> Maybe (Key User)
     addUserHandler newUser = liftIO $ addUserHelper pool newUser
+    deleteUserHandler userToDel = liftIO $ deleteUserHelper pool userToDel
 
 
 -- function that takes the server function and returns a WAI application 
