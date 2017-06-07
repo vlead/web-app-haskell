@@ -11,6 +11,9 @@ module Models where
 import Data.Aeson
 import Data.Text
 
+import Role
+
+
 import           Control.Monad.IO.Class  (liftIO)
 import           Database.Persist 
 import           Database.Persist.Sqlite
@@ -21,7 +24,7 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 User
   name String
   email String
-  roles String
+  roles Role
   deriving Eq Read Show
 |]
 
@@ -29,7 +32,7 @@ instance FromJSON User where
   parseJSON = withObject "User" $ \ v ->
     User <$> v .: "name"
          <*> v .: "email"
-         <*> v .: "roles"
+         <*> v .: "role"
 
 
 instance ToJSON User where

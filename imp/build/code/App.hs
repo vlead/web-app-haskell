@@ -26,20 +26,33 @@ import           Data.Text
 import           Api
 import           Models
 
-server :: ConnectionPool -> Server userAPI
+
+-- helper function for showUsersHandler
+--showAllUsers :: ConnectionPool -> IO (Maybe User)
+showAllUsers pool = flip runSqlPersistMPool pool $ do
+  users <- selectList [] []
+  return users
+-- note: <$> is the infix symbol for =fmap=
+
+  
+
+server :: ConnectionPool -> Server UserAPI
 server pool =
   showUsersHandler :<|> addUsersHandler
   where
-    showUsersHandler = liftIO $ showUsers
-    addUserHandler = return newUser
+    showUsersHandler :: ConnectionPool -> Maybe ([User])
+    showUsersHandler = showAllUsers $ pool 
 
--- here, we assume that there are non-zero users in the database
--- i'll put a maybe and case handling later
--- addUserHandler is not yet defined
+    addUsersHandler :: User -> Maybe (Key User)
+    addUsersHandler user = return keyUser
+
 
 -- function that takes the server function and returns a WAI application 
 app :: ConnectionPool -> Application
-app pool = serve UserAPI $ server pool
+app pool = serve userAPI $ server pool
+  where
+    userAPI :: Proxy UserAPI
+    userAPI = Proxy
 
 
 -- to integrate Persist backend with API
@@ -54,6 +67,6 @@ mkApp sqliteFile = do
 
 
 -- to run the SQL database
-run :: FilePath -> IO
+run :: FilePath -> IO ()
 run sqliteFile =
   Warp.run 8000 =<< mkApp sqliteFile

@@ -80,5 +80,4 @@ userAPI = Proxy
 #+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
 <<extns_and_imports>>
 <<api_types>>
-<<run>>
 #+END_SRC
