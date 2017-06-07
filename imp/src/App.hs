@@ -28,23 +28,38 @@ import           Models
 
 
 -- helper function for showUsersHandler
---showAllUsers :: ConnectionPool -> IO (Maybe User)
-showAllUsers pool = flip runSqlPersistMPool pool $ do
+--showAllUsers :: ConnectionPool -> IO ([Maybe User])
+showAllUsersHelper pool = flip runSqlPersistMPool pool $ do
   users <- selectList [] []
-  return users
--- note: <$> is the infix symbol for =fmap=
+  return $ Prelude.map entityVal users
 
+-- here we assume that there are non-zero users in the database
+
+
+addUserHelper :: ConnectionPool -> User -> IO (Maybe (Key (User)))
+addUserHelper pool newUser = flip runSqlPersistMPool pool $ do
+  exists <- selectFirst [UserName ==. (userName newUser)] []
+  case exists of
+    Nothing -> Just <$> insert newUser
+    Just _  -> return Nothing
+
+  
+-- note: <$> is the infix symbol for =fmap=
+-- note: using Prelude.map to avoid confusion with Data.Text.Map 
+-- note: DB actions are IO actions, and will therefore return a value of IO ()
+-- and therefore we need to use liftIO () to raise it to the Handler monad
+-- this is where monad transformations come in
   
 
 server :: ConnectionPool -> Server UserAPI
 server pool =
-  showUsersHandler :<|> addUsersHandler
+  showUsersHandler :<|> addUserHandler
   where
-    showUsersHandler :: ConnectionPool -> Maybe ([User])
-    showUsersHandler = showAllUsers $ pool 
+--    showUsersHandler :: ConnectionPool -> Maybe ([User])
+    showUsersHandler = liftIO $ showAllUsersHelper pool 
 
-    addUsersHandler :: User -> Maybe (Key User)
-    addUsersHandler user = return keyUser
+--    addUsersHandler :: User -> Maybe (Key User)
+    addUserHandler newUser = liftIO $ addUserHelper pool newUser
 
 
 -- function that takes the server function and returns a WAI application 
