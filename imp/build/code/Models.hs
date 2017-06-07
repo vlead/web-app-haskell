@@ -32,7 +32,7 @@ instance FromJSON User where
   parseJSON = withObject "User" $ \ v ->
     User <$> v .: "name"
          <*> v .: "email"
-         <*> v .: "role"
+         <*> v .: "roles"
 
 
 instance ToJSON User where

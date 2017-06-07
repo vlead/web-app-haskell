@@ -67,7 +67,7 @@ import Servant.API
 #+BEGIN_SRC haskell 
 type UserAPI = "showUsers" :> Get '[JSON] [User]
              :<|> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (Key User))
-             :<|> "deleteUser" :> ReqBody '[JSON] Text :> Post '[JSON] [User]
+             :<|> "deleteUser" :> ReqBody '[PlainText] Text :> Post '[JSON] (Maybe (User))
   
   
 
@@ -84,5 +84,6 @@ userAPI = Proxy
 
 #+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
 <<extns_and_imports>>
+<<reqbody_text>>
 <<api_types>>
 #+END_SRC

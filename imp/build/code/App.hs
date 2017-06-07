@@ -46,10 +46,15 @@ addUserHelper pool newUser = flip runSqlPersistMPool pool $ do
 
 
 -- helper function for deleteUserHandler
-deleteUserHelper :: ConnectionPool -> Text -> IO ()
+deleteUserHelper :: ConnectionPool -> Text -> IO ((Maybe (User)))
 deleteUserHelper pool userToDel = flip runSqlPersistMPool pool $ do
-    userIfDeleted <- deleteWhere [UserEmail ==. unpack(userToDel)]
-    return userIfDeleted
+  deletedUser <- selectFirst [UserEmail ==. unpack(userToDel)] []
+  case deletedUser of
+    Nothing -> return Nothing
+    Just _ -> do 
+                 userIfDeleted <- deleteWhere [UserEmail ==. unpack(userToDel)]
+                 return $ entityVal <$> deletedUser 
+  
 server :: ConnectionPool -> Server UserAPI
 server pool =
   showUsersHandler
