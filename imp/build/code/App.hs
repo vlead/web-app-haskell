@@ -36,30 +36,29 @@ showAllUsersHelper pool = flip runSqlPersistMPool pool $ do
 -- here we assume that there are non-zero users in the database
 
 
-addUserHelper :: ConnectionPool -> User -> IO (Maybe (Key (User)))
+-- helper function for addUserHandler
+--addUserHelper :: ConnectionPool -> User -> IO (Maybe (Key (User)))
 addUserHelper pool newUser = flip runSqlPersistMPool pool $ do
   exists <- selectFirst [UserName ==. (userName newUser)] []
   case exists of
     Nothing -> Just <$> insert newUser
     Just _  -> return Nothing
 
-  
--- note: <$> is the infix symbol for =fmap=
--- note: using Prelude.map to avoid confusion with Data.Text.Map 
--- note: DB actions are IO actions, and will therefore return a value of IO ()
--- and therefore we need to use liftIO () to raise it to the Handler monad
--- this is where monad transformations come in
-  
 
+-- helper function for deleteUserHandler
+deleteUserHelper :: ConnectionPool -> Text -> IO ()
+deleteUserHelper pool userToDel = flip runSqlPersistMPool pool $ do
+    userIfDeleted <- deleteWhere [UserEmail ==. unpack(userToDel)]
+    return userIfDeleted
 server :: ConnectionPool -> Server UserAPI
 server pool =
-  showUsersHandler :<|> addUserHandler
+  showUsersHandler
+  :<|> addUserHandler
+  :<|> deleteUserHandler
   where
---    showUsersHandler :: ConnectionPool -> Maybe ([User])
     showUsersHandler = liftIO $ showAllUsersHelper pool 
-
---    addUsersHandler :: User -> Maybe (Key User)
     addUserHandler newUser = liftIO $ addUserHelper pool newUser
+    deleteUserHandler userToDel = liftIO $ deleteUserHelper pool userToDel
 
 
 -- function that takes the server function and returns a WAI application 

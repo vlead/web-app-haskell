@@ -67,7 +67,7 @@ import Servant.API
 #+BEGIN_SRC haskell 
 type UserAPI = "showUsers" :> Get '[JSON] [User]
              :<|> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (Key User))
-             :<|> "deleteUser" :> ReqBody '[JSON] UserId :> Post '[JSON] (Maybe (Key User))
+             :<|> "deleteUser" :> ReqBody '[JSON] Text :> Post '[JSON] [User]
   
   
 

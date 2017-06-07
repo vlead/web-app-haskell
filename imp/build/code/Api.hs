@@ -43,3 +43,4 @@ import Models
 import Servant.API
 type UserAPI = "showUsers" :> Get '[JSON] [User]
              :<|> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (Key User))
+             :<|> "deleteUser" :> ReqBody '[JSON] Text :> DeleteNoContent '[JSON] NoContent
