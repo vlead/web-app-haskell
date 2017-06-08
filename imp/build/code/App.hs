@@ -101,6 +101,7 @@ mkApp sqliteFile = do
     createSqlitePool (cs sqliteFile) 5
 
   runSqlPool (runMigration migrateAll) pool
+  adminUserCheck pool
   return $ app pool
 
 

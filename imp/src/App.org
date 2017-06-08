@@ -129,6 +129,7 @@ mkApp sqliteFile = do
     createSqlitePool (cs sqliteFile) 5
 
   runSqlPool (runMigration migrateAll) pool
+  adminUserCheck pool
   return $ app pool
 
 
@@ -180,7 +181,7 @@ deleteUserHelper pool userToDel = flip runSqlPersistMPool pool $ do
 -- note: DB actions are IO actions, and will therefore return a value of IO ()
 -- and therefore we need to use liftIO () to raise it to the Handler monad
 -- this is where monad transformations come in
-  
+
 * Admin User Invariant
 
 Admin user invariants include :
