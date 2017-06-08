@@ -134,8 +134,9 @@ mkApp sqliteFile = do
 
 -- to run the SQL database
 run :: FilePath -> IO ()
-run sqliteFile =
+run sqliteFile = 
   Warp.run 8000 =<< mkApp sqliteFile
+      
 
 
 #+END_SRC
@@ -180,6 +181,28 @@ deleteUserHelper pool userToDel = flip runSqlPersistMPool pool $ do
 -- and therefore we need to use liftIO () to raise it to the Handler monad
 -- this is where monad transformations come in
   
+* Admin User Invariant
+
+Admin user invariants include :
+
+  - The system must have a single user with =roles = Admin=.
+  - The system cannot have less than one user.
+    
+#+NAME: admin_user_invariant
+#+BEGIN_SRC haskell
+
+-- to check if admin user exists
+adminUserCheck :: ConnectionPool -> IO(String)
+adminUserCheck pool = flip runSqlPersistMPool pool $ do
+  adminUser <- selectFirst [UserRoles ==. Admin] []
+  case adminUser of
+    Nothing -> do
+      adminUserId <- insert $ User "admin-user" "admin@email.com" $ Admin
+      return "Admin User Added"
+    Just _ -> return "Admin User Exists"
+    
+
+#+END_SRC
 * Tangling
 
 #+NAME: tangling
@@ -188,5 +211,6 @@ deleteUserHelper pool userToDel = flip runSqlPersistMPool pool $ do
 <<from_userdata_to_user>>
 <<from_uniqueuserdata_to_text>>
 <<controllers>>
+<<admin_user_invariant>>
 <<server>>
 #+END_SRC

@@ -62,6 +62,18 @@ deleteUserHelper pool userToDel = flip runSqlPersistMPool pool $ do
                  userIfDeleted <- deleteWhere [UserEmail ==. unpack(userToDel)]
                  return $ entityVal <$> deletedUser 
   
+
+-- to check if admin user exists
+adminUserCheck :: ConnectionPool -> IO(String)
+adminUserCheck pool = flip runSqlPersistMPool pool $ do
+  adminUser <- selectFirst [UserRoles ==. Admin] []
+  case adminUser of
+    Nothing -> do
+      adminUserId <- insert $ User "admin-user" "admin@email.com" $ Admin
+      return "Admin User Added"
+    Just _ -> return "Admin User Exists"
+    
+
 server :: ConnectionPool -> Server UserAPI
 server pool =
   showUsersHandler
@@ -94,5 +106,5 @@ mkApp sqliteFile = do
 
 -- to run the SQL database
 run :: FilePath -> IO ()
-run sqliteFile =
+run sqliteFile = 
   Warp.run 8000 =<< mkApp sqliteFile

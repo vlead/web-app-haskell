@@ -1,0 +1,28 @@
+module Main where
+
+import           App
+
+
+addAdminUser :: IO()
+addAdminUser = do
+  adminUserId <- runDB $ insert $ User "admin-user" "admin@email.com" Admin
+  return adminUserId
+
+  
+adminUserInvariantCheck :: IO(Bool)
+adminUserInvariantCheck = do
+  isPresent <- runDB $ selectFirst [userRoles ==. Admin] []
+  case isPresent of
+    Nothing -> return False
+    Just _ <- True
+    
+    
+main :: IO ()
+main = do
+  run "sqlite.db"
+  case adminUserInvariantCheck of
+    True   -> do
+                putStrLn <- "Admin User Exists"
+     False -> do
+                id <- addAdminUser
+                putStrLn <- "Admin User Added"
