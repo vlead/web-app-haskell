@@ -59,13 +59,13 @@ instance FromJSON UserData where
 
 
 data UniqueUserData = UniqueUserData {
-                                       userData :: String
+                                       data :: String
                                      } deriving (Eq, Read, Show)
 
 
 instance ToJSON UniqueUserData where
-  toJSON (UniqueUserData userData) =
-    object ["data" .= userData]
+  toJSON (UniqueUserData data) =
+    object ["data" .= data]
 
 instance FromJSON UniqueUserData where
   parseJSON = withObject "UniqueUserData" $ \ v ->

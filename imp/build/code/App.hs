@@ -25,6 +25,13 @@ import           Data.Text
 
 import           Api
 import           Models
+import           Role
+
+toUserDatatype :: UserData -> User
+toUserDatatype (UserData userDataName userDataEmail) = User {userName=userDataName,  userEmail=userDataEmail, userRoles=NonAdmin}
+
+toTextDatatype :: UniqueUserData -> Text
+toTextDatatype (UniqueUserData userData) = pack(userData)
 
 
 -- helper function for showUsersHandler
@@ -62,8 +69,8 @@ server pool =
   :<|> deleteUserHandler
   where
     showUsersHandler = liftIO $ showAllUsersHelper pool 
-    addUserHandler newUser = liftIO $ addUserHelper pool newUser
-    deleteUserHandler userToDel = liftIO $ deleteUserHelper pool userToDel
+    addUserHandler newUser = liftIO $ addUserHelper pool $ toUserDatatype newUser
+    deleteUserHandler userToDel = liftIO $ deleteUserHelper pool $ toTextDatatype userToDel
 
 
 -- function that takes the server function and returns a WAI application 

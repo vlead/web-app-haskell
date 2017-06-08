@@ -61,16 +61,61 @@ import Models
 import Servant.API
 #+END_SRC
 
+* Datatypes For Instruction Input
+
+** =UserData= type to input name and email of user.
+
+#+NAME: user_data
+#+BEGIN_SRC haskell
+data UserData = UserData {
+                         userDataName :: String
+                         , userDataEmail :: String
+                         } deriving (Show, Read, Eq)
+
+instance ToJSON UserData where
+  toJSON (UserData userDataName userDataEmail) =
+    object ["name" .= userDataName
+           ,"email" .= userDataEmail ]
+
+instance FromJSON UserData where
+  parseJSON = withObject "UserData" $ \ v ->
+    UserData <$> v .: "name"
+             <*> v .: "email"
+ 
+
+#+END_SRC 
+
+** =UniqueUserData= : a unique value to identify the user by
+
+In this case, we take =UniqueUserData= to be =userEmail=.
+
+#+NAME: unique_user_data
+#+BEGIN_SRC haskell
+
+data UniqueUserData = UniqueUserData {
+                                       userData :: String
+                                     } deriving (Eq, Read, Show)
+
+
+instance ToJSON UniqueUserData where
+  toJSON (UniqueUserData userData) =
+    object ["data" .= userData]
+
+instance FromJSON UniqueUserData where
+  parseJSON = withObject "UniqueUserData" $ \ v ->
+    UniqueUserData <$> v .: "data"
+
+
+
+#+END_SRC
 * API 
 
 #+NAME: api_types
-#+BEGIN_SRC haskell 
+#+BEGIN_SRC haskell
+ 
 type UserAPI = "showUsers" :> Get '[JSON] [User]
-             :<|> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (Key User))
-             :<|> "deleteUser" :> ReqBody '[PlainText] Text :> Post '[JSON] (Maybe (User))
-  
-  
-
+             :<|> "addUser" :> ReqBody '[JSON] UserData :> Post '[JSON] (Maybe (Key User))
+             :<|> "deleteUser" :> ReqBody '[JSON] UniqueUserData :> Post '[JSON] (Maybe (User))
 #+END_SRC
 * Type Variable for API
 
@@ -84,6 +129,7 @@ userAPI = Proxy
 
 #+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
 <<extns_and_imports>>
-<<reqbody_text>>
+<<user_data>>
+<<unique_user_data>>
 <<api_types>>
 #+END_SRC

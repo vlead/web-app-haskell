@@ -28,12 +28,6 @@ User
   deriving Eq Read Show
 |]
 
-instance FromJSON User where
-  parseJSON = withObject "User" $ \ v ->
-    User <$> v .: "name"
-         <*> v .: "email"
-         <*> v .: "roles"
-
 
 instance ToJSON User where
   toJSON (User name email roles) =

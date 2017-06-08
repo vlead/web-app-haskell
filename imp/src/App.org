@@ -13,35 +13,12 @@ Controllers for handling the following routes :
 
    - Data Params ::
      {
-      'email': '<value>',
       'name': '<value>',
-      'roles' : <value>
+      'email': '<value>',
      }
 
    - Success Response ::
-     + Code: 200
-
-     + Content:
-       #+BEGIN_EXAMPLE
-       {
-         "email": {
-         "email": "xyz@gmail.com",
-         "id": "2"
-          },
-       "id": "2",
-       "name": {
-       "id": "2",
-       "name": "xyz"
-          },
-       "roles": [
-             {
-            "id": "2",
-            "name": "user"
-             }
-           ]
-       }
-       
-       #+END_EXAMPLE
+     + <userId>
 
 ** showUser
 
@@ -52,39 +29,25 @@ Controllers for handling the following routes :
   - URL Params ::  None
        
   - Success Response ::
-    + Code: 200
-
+   
     + Content ::
       #+BEGIN_EXAMPLE
-      [
+  [
 	{
-	  "id": "1",
-	  "email": {
-	    "email": "xyz@vlabs.ac.in",
-	    "id": "1"
-	  },
-	  "roles": [],
-	  "name": {
-	    "name": "admin",
-	    "id": "1"
-	  }
-	},
-	{
-	  "id": "2",
-	  "email": {
-	    "email": "abc@gmail.com",
-	    "id": "2"
-	  },
-	  "roles": [],
-	  "name": {
-	    "name": "abc",
-	    "id": "2"
-	  }
-	}
-      ]
+        email: "abc@xyz.com",
+        roles:
+            role: "NonAdmin"
+        name: "Abc Def"
+    }
+  ]  
       #+END_EXAMPLE
-* Language Extensions and Imports
+** deleteUser
 
+   - URL :: /deleteUser
+
+   - 
+* Language Extensions and Imports
+  
 #+NAME: extns_and_imports
 #+BEGIN_SRC haskell
 {-# LANGUAGE DataKinds         #-}
@@ -114,9 +77,27 @@ import           Data.Text
 
 import           Api
 import           Models
+import           Role
 
 #+END_SRC
 
+* Converting To And From Route Datatypes
+
+** =UserData= to =User=
+#+NAME: from_userdata_to_user
+#+BEGIN_SRC haskell
+toUserDatatype :: UserData -> User
+toUserDatatype (UserData userDataName userDataEmail) = User {userName=userDataName,  userEmail=userDataEmail, userRoles=NonAdmin}
+#+END_SRC
+** =UniqueUserData= to =Text=
+
+#+NAME: from_uniqueuserdata_to_text
+#+BEGIN_SRC haskell
+
+toTextDatatype :: UniqueUserData -> Text
+toTextDatatype (UniqueUserData userData) = pack(userData)
+
+#+END_SRC
 * Server handlers
 
 #+NAME: server
@@ -128,8 +109,8 @@ server pool =
   :<|> deleteUserHandler
   where
     showUsersHandler = liftIO $ showAllUsersHelper pool 
-    addUserHandler newUser = liftIO $ addUserHelper pool newUser
-    deleteUserHandler userToDel = liftIO $ deleteUserHelper pool userToDel
+    addUserHandler newUser = liftIO $ addUserHelper pool $ toUserDatatype newUser
+    deleteUserHandler userToDel = liftIO $ deleteUserHelper pool $ toTextDatatype userToDel
 
 
 -- function that takes the server function and returns a WAI application 
@@ -199,13 +180,13 @@ deleteUserHelper pool userToDel = flip runSqlPersistMPool pool $ do
 -- and therefore we need to use liftIO () to raise it to the Handler monad
 -- this is where monad transformations come in
   
-
-* Error Handlers
 * Tangling
 
 #+NAME: tangling
 #+BEGIN_SRC haskell :eval no :noweb yes :tangle App.hs
 <<extns_and_imports>>
+<<from_userdata_to_user>>
+<<from_uniqueuserdata_to_text>>
 <<controllers>>
 <<server>>
 #+END_SRC

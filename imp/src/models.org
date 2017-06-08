@@ -40,7 +40,8 @@ import           Database.Persist.TH
 #+END_SRC
 * Externally Defined Datatypes
 
-=Persistent= requires us to define custom datatypes in an external file. 
+=Persistent= requires us to define custom datatypes in an external file (due to
+the way Template Haskell in the main =Models= module is parsed.) 
 
 ** Role
    
@@ -66,14 +67,6 @@ data Role = Admin | NonAdmin
 instance ToJSON Role where
   toJSON Admin = object [pack("role") .= "Admin"]
   toJSON NonAdmin = object [pack("role") .= "NonAdmin"]
-
-instance FromJSON Role where
-  parseJSON (Object o) = do
-    role <- o .: pack("role")
-    case (role :: String) of
-      "Admin" -> return Admin
-      "NonAdmin" -> return NonAdmin
-
   
 -- storing this datatype as a PersistField type
 derivePersistField "Role"
@@ -99,12 +92,6 @@ User
 * User Instances Of
 #+NAME: user_instances_of
 #+BEGIN_SRC haskell
-instance FromJSON User where
-  parseJSON = withObject "User" $ \ v ->
-    User <$> v .: "name"
-         <*> v .: "email"
-         <*> v .: "roles"
-
 
 instance ToJSON User where
   toJSON (User name email roles) =

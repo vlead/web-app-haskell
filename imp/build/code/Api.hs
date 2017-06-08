@@ -41,7 +41,39 @@ import Database.Persist
 
 import Models
 import Servant.API
+data UserData = UserData {
+                         userDataName :: String
+                         , userDataEmail :: String
+                         } deriving (Show, Read, Eq)
 
+instance ToJSON UserData where
+  toJSON (UserData userDataName userDataEmail) =
+    object ["name" .= userDataName
+           ,"email" .= userDataEmail ]
+
+instance FromJSON UserData where
+  parseJSON = withObject "UserData" $ \ v ->
+    UserData <$> v .: "name"
+             <*> v .: "email"
+ 
+
+
+data UniqueUserData = UniqueUserData {
+                                       userData :: String
+                                     } deriving (Eq, Read, Show)
+
+
+instance ToJSON UniqueUserData where
+  toJSON (UniqueUserData userData) =
+    object ["data" .= userData]
+
+instance FromJSON UniqueUserData where
+  parseJSON = withObject "UniqueUserData" $ \ v ->
+    UniqueUserData <$> v .: "data"
+
+
+
+ 
 type UserAPI = "showUsers" :> Get '[JSON] [User]
-             :<|> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (Key User))
-             :<|> "deleteUser" :> ReqBody '[PlainText] Text :> Post '[JSON] (Maybe (User))
+             :<|> "addUser" :> ReqBody '[JSON] UserData :> Post '[JSON] (Maybe (Key User))
+             :<|> "deleteUser" :> ReqBody '[JSON] UniqueUserData :> Post '[JSON] (Maybe (User))
