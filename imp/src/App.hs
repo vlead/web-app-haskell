@@ -63,25 +63,24 @@ deleteUserHelper pool userToDel = flip runSqlPersistMPool pool $ do
 
 
 -- helper function for loginHandler
-loginHelper :: ConnectionPool -> Session -> IO (String)
+loginHelper :: ConnectionPool -> Session -> IO (Maybe (Key (Session)))
 loginHelper pool newSession = flip runSqlPersistMPool pool $ do
   ifExists <- selectFirst [UserEmail ==. (sessionUserEmail newSession)] []
   case ifExists of
-    Nothing -> return "User does not exist"
-    Just _  -> do
-      sessionId <- insert newSession
-      return "User successfully logged in"
+    Nothing -> return Nothing
+    Just _  -> Just <$> insert newSession
+  
 
 
 -- helper function for logoutHandler
-logoutHelper :: ConnectionPool -> Session -> IO (String)
+logoutHelper :: ConnectionPool -> Session -> IO (Maybe (Session))
 logoutHelper pool currentSession = flip runSqlPersistMPool pool $ do
   ifExists <- selectFirst [SessionUserEmail ==. (sessionUserEmail currentSession), SessionUserRole ==. (sessionUserRole currentSession)] []
   case ifExists of
-    Nothing -> return "Invalid Session!"
+    Nothing -> return Nothing
     Just _ -> do
       deleteWhere [SessionUserEmail ==. (sessionUserEmail currentSession)]
-      return "User successfully logged out."
+      return $ entityVal <$> ifExists
       
   
 
@@ -108,8 +107,8 @@ server pool =
     indexHandler :: Handler (Text)
     indexHandler = return "Index Page"
 
-    loginHandler :: Session -> Handler (Text)
-    loginHandler newSession = return "Login Page"
+    loginHandler :: Session -> Handler (Maybe (Key (Session)))
+    loginHandler newSession = liftIO $ loginHelper pool newSession
 
     showUsersHandler :: Handler ([User])
     showUsersHandler = liftIO $ showAllUsersHelper pool 
@@ -120,8 +119,8 @@ server pool =
     deleteUserHandler :: UniqueUserData -> Handler (Maybe (User))
     deleteUserHandler userToDel = liftIO $ deleteUserHelper pool $ toTextDatatype userToDel
 
-    logoutHandler :: Session -> Handler (Text)
-    logoutHandler currentSession = return "User successfully logged out"
+    logoutHandler :: Session -> Handler (Maybe (Session))
+    logoutHandler currentSession = liftIO $ logoutHelper pool currentSession
 
 
 -- function that takes the server function and returns a WAI application 

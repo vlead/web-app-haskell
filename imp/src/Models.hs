@@ -43,5 +43,10 @@ instance ToJSON User where
 
 instance FromJSON Session where
   parseJSON = withObject "Session" $ \ v ->
-    Session <$> v .: "username"
+    Session <$> v .: "email"
             <*> v .: "role"
+
+instance ToJSON Session where
+  toJSON (Session sessionEmail sessionRole) =
+    object ["email" .= sessionEmail
+            , "role" .= sessionRole ]
