@@ -18,6 +18,6 @@ data Role = Admin | NonAdmin
 instance ToJSON Role where
   toJSON Admin = object [pack("role") .= "Admin"]
   toJSON NonAdmin = object [pack("role") .= "NonAdmin"]
-  
+    
 -- storing this datatype as a PersistField type
 derivePersistField "Role"

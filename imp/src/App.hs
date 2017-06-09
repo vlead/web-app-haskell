@@ -11,6 +11,7 @@ import           Control.Monad.IO.Class
 import           Control.Monad.Logger (runStderrLoggingT)
 
 import           Data.String.Conversions
+import qualified Data.ByteString.Lazy.Char8 as B           
 
 import           Database.Persist
 import           Database.Persist.Sql
@@ -35,16 +36,14 @@ toTextDatatype (UniqueUserData userData) = pack(userData)
 
 
 -- helper function for showUsersHandler
---showAllUsers :: ConnectionPool -> IO ([Maybe User])
+showAllUsersHelper :: ConnectionPool -> IO ([User])
 showAllUsersHelper pool = flip runSqlPersistMPool pool $ do
   users <- selectList [] []
   return $ Prelude.map entityVal users
 
--- here we assume that there are non-zero users in the database
-
 
 -- helper function for addUserHandler
---addUserHelper :: ConnectionPool -> User -> IO (Maybe (Key (User)))
+addUserHelper :: ConnectionPool -> User -> IO (Maybe (Key (User)))
 addUserHelper pool newUser = flip runSqlPersistMPool pool $ do
   exists <- selectFirst [UserName ==. (userName newUser)] []
   case exists of
@@ -60,7 +59,30 @@ deleteUserHelper pool userToDel = flip runSqlPersistMPool pool $ do
     Nothing -> return Nothing
     Just _ -> do 
                  userIfDeleted <- deleteWhere [UserEmail ==. unpack(userToDel)]
-                 return $ entityVal <$> deletedUser 
+                 return $ entityVal <$> deletedUser
+
+
+-- helper function for loginHandler
+--loginHelper :: ConnectionPool -> Session -> IO (String)
+loginHelper pool newSession = flip runSqlPersistMPool pool $ do
+  ifExists <- selectFirst [UserEmail ==. (sessionUserEmail newSession)] []
+  case ifExists of
+    Nothing -> return "User does not exist"
+    Just _  -> do
+      sessionId <- insert newSession
+      return "User successfully logged in"
+
+
+-- helper function for logoutHandler
+--logoutHelper :: ConnectionPool -> Session -> IO (String)
+logoutHelper pool currentSession = flip runSqlPersistMPool pool $ do
+  ifExists <- selectFirst [SessionUserEmail ==. (sessionUserEmail currentSession), SessionUserRole ==. (sessionUserRole currentSession)] []
+  case ifExists of
+    Nothing -> return "Invalid Session!"
+    Just _ -> do
+      deleteWhere [SessionUserEmail ==. (sessionUserEmail currentSession)]
+      return "User successfully logged out."
+      
   
 
 -- to check if admin user exists
@@ -74,24 +96,42 @@ adminUserCheck pool = flip runSqlPersistMPool pool $ do
     Just _ -> return "Admin User Exists"
     
 
+
 server :: ConnectionPool -> Server UserAPI
 server pool =
-  showUsersHandler
+       indexHandler
+  :<|> loginHandler
+  :<|> showUsersHandler
   :<|> addUserHandler
   :<|> deleteUserHandler
+  :<|> logoutHandler
   where
+
+    indexHandler :: Handler (Text)
+    indexHandler = return "Welcome To Haskell"
+
+    loginHandler :: Session -> Handler (Text)
+    loginHandler newSession = return "Login page"
+
+    showUsersHandler :: Handler ([User])
     showUsersHandler = liftIO $ showAllUsersHelper pool 
+
+    addUserHandler :: UserData -> Handler (Maybe (Key (User)))
     addUserHandler newUser = liftIO $ addUserHelper pool $ toUserDatatype newUser
+
+    deleteUserHandler :: UniqueUserData -> Handler (Maybe (User))
     deleteUserHandler userToDel = liftIO $ deleteUserHelper pool $ toTextDatatype userToDel
+
+    logoutHandler :: Session -> Handler (Text)
+    logoutHandler currentSession = return "Logout Page"
 
 
 -- function that takes the server function and returns a WAI application 
 app :: ConnectionPool -> Application
 app pool = serve userAPI $ server pool
-  where
-    userAPI :: Proxy UserAPI
-    userAPI = Proxy
-
+           where
+             userAPI :: Proxy UserAPI
+             userAPI = Proxy
 
 -- to integrate Persist backend with API
 -- createSqlitePool creates a pool of database connections

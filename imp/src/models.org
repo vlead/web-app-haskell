@@ -1,5 +1,6 @@
 #+TITLE: Models - Using Persistent Database
 
+
 * Introduction
 
 The data model- that are stored in the database- are defined here. 
@@ -67,16 +68,16 @@ data Role = Admin | NonAdmin
 instance ToJSON Role where
   toJSON Admin = object [pack("role") .= "Admin"]
   toJSON NonAdmin = object [pack("role") .= "NonAdmin"]
-  
+    
 -- storing this datatype as a PersistField type
 derivePersistField "Role"
 
   
 
 #+END_SRC
-* User Model
+* Database Models
 
-#+NAME: user_model
+#+NAME: database_models
 #+BEGIN_SRC haskell
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
@@ -84,12 +85,19 @@ User
   name String
   email String
   roles Role
+  UniqueName name
+  UniqueEmail email
+  deriving Eq Read Show
+Session
+  userEmail String
+  userRole String
   deriving Eq Read Show
 |]
 
 #+END_SRC
 
 * User Instances Of
+
 #+NAME: user_instances_of
 #+BEGIN_SRC haskell
 
@@ -99,14 +107,25 @@ instance ToJSON User where
            , "email"  .= email
            , "roles" .= roles]
 
+#+END_SRC
 
+* Session Instances Of
+
+#+NAME: session_instances_of
+#+BEGIN_SRC haskell
+instance FromJSON Session where
+  parseJSON = withObject "Session" $ \ v ->
+    Session <$> v .: "username"
+            <*> v .: "role"
 
 #+END_SRC
+
 * Tangling 
 
 #+NAME: tangling
 #+BEGIN_SRC haskell :eval no :noweb yes :tangle Models.hs
 <<extns_and_imports>>
-<<user_model>>
+<<database_models>>
 <<user_instances_of>>
+<<session_instances_of>>
 #+END_SRC

@@ -6,12 +6,20 @@
 This is an example web API written using =Servant= , that interacts with a sqlite
 database via the haskell library =Persistent=.
 
-The API has three routes :
+The API has six routes :
 
-** showUsers
-** addUser
-** deleteUser
+** Non-Secure Routes - Not Requiring Authentication
 
+*** index
+*** login
+
+** Secure Routes - Requiring Authentication
+
+*** showUsers
+*** addUser
+*** deleteUser
+
+*** logout
 * Language Extensions and Imports 
 
 #+NAME: extns_and_imports
@@ -110,26 +118,40 @@ instance FromJSON UniqueUserData where
 #+END_SRC
 * API 
 
-#+NAME: api_types
+** Routes not requiring authentication
+
+#+NAME: nonsecure_routes
+#+BEGIN_SRC haskell
+type NonSecureRoutes = "index" :> Get '[PlainText] Text
+                     :<|> "login" :> ReqBody '[JSON] Session :> Get '[PlainText] Text
+
+#+END_SRC
+** Routes requiring authentication
+
+#+NAME: secure_routes
 #+BEGIN_SRC haskell
  
-type UserAPI = "showUsers" :> Get '[JSON] [User]
+type SecureRoutes = "showUsers" :> Get '[JSON] [User]
              :<|> "addUser" :> ReqBody '[JSON] UserData :> Post '[JSON] (Maybe (Key User))
              :<|> "deleteUser" :> ReqBody '[JSON] UniqueUserData :> Post '[JSON] (Maybe (User))
-#+END_SRC
-* Type Variable for API
+             :<|> "logout" :> ReqBody '[JSON] Session :> Get '[PlainText] Text
 
-#+NAME: run
+#+END_SRC
+** Combined API
+
+#+NAME: combined_api
 #+BEGIN_SRC haskell
-userAPI :: Proxy UserAPI
-userAPI = Proxy
+type UserAPI = NonSecureRoutes :<|> SecureRoutes
 
 #+END_SRC
+
 * Tangling
 
 #+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
 <<extns_and_imports>>
 <<user_data>>
 <<unique_user_data>>
-<<api_types>>
+<<nonsecure_routes>>
+<<secure_routes>>
+<<combined_api>>
 #+END_SRC
