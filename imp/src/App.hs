@@ -63,7 +63,7 @@ deleteUserHelper pool userToDel = flip runSqlPersistMPool pool $ do
 
 
 -- helper function for loginHandler
---loginHelper :: ConnectionPool -> Session -> IO (String)
+loginHelper :: ConnectionPool -> Session -> IO (String)
 loginHelper pool newSession = flip runSqlPersistMPool pool $ do
   ifExists <- selectFirst [UserEmail ==. (sessionUserEmail newSession)] []
   case ifExists of
@@ -74,7 +74,7 @@ loginHelper pool newSession = flip runSqlPersistMPool pool $ do
 
 
 -- helper function for logoutHandler
---logoutHelper :: ConnectionPool -> Session -> IO (String)
+logoutHelper :: ConnectionPool -> Session -> IO (String)
 logoutHelper pool currentSession = flip runSqlPersistMPool pool $ do
   ifExists <- selectFirst [SessionUserEmail ==. (sessionUserEmail currentSession), SessionUserRole ==. (sessionUserRole currentSession)] []
   case ifExists of
@@ -99,19 +99,17 @@ adminUserCheck pool = flip runSqlPersistMPool pool $ do
 
 server :: ConnectionPool -> Server UserAPI
 server pool =
-       indexHandler
-  :<|> loginHandler
-  :<|> showUsersHandler
-  :<|> addUserHandler
-  :<|> deleteUserHandler
-  :<|> logoutHandler
+       (indexHandler :<|> loginHandler)
+  :<|> (showUsersHandler :<|> addUserHandler
+  :<|>  deleteUserHandler :<|> logoutHandler )
+
   where
 
     indexHandler :: Handler (Text)
-    indexHandler = return "Welcome To Haskell"
+    indexHandler = return "Index Page"
 
     loginHandler :: Session -> Handler (Text)
-    loginHandler newSession = return "Login page"
+    loginHandler newSession = return "Login Page"
 
     showUsersHandler :: Handler ([User])
     showUsersHandler = liftIO $ showAllUsersHelper pool 
@@ -123,7 +121,7 @@ server pool =
     deleteUserHandler userToDel = liftIO $ deleteUserHelper pool $ toTextDatatype userToDel
 
     logoutHandler :: Session -> Handler (Text)
-    logoutHandler currentSession = return "Logout Page"
+    logoutHandler currentSession = return "User successfully logged out"
 
 
 -- function that takes the server function and returns a WAI application 

@@ -124,7 +124,7 @@ instance FromJSON UniqueUserData where
 #+BEGIN_SRC haskell
 type NonSecureRoutes = "index" :> Get '[PlainText] Text
                      :<|> "login" :> ReqBody '[JSON] Session :> Get '[PlainText] Text
-
+                     
 #+END_SRC
 ** Routes requiring authentication
 
@@ -135,7 +135,7 @@ type SecureRoutes = "showUsers" :> Get '[JSON] [User]
              :<|> "addUser" :> ReqBody '[JSON] UserData :> Post '[JSON] (Maybe (Key User))
              :<|> "deleteUser" :> ReqBody '[JSON] UniqueUserData :> Post '[JSON] (Maybe (User))
              :<|> "logout" :> ReqBody '[JSON] Session :> Get '[PlainText] Text
-
+             
 #+END_SRC
 ** Combined API
 
