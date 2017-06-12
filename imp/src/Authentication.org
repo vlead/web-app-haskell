@@ -1,1 +1,49 @@
-#+TITLE: Session Authentication for User Dir API
+#+TITLE: Authentication Function for App
+
+
+* Language Extensions and Imports
+  
+#+NAME: extns_and_imports
+#+BEGIN_SRC haskell
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE TypeOperators     #-}
+
+module Authentication where
+
+import           Control.Monad.IO.Class
+import           Control.Monad.Logger (runStderrLoggingT)
+
+import           Data.String.Conversions
+import qualified Data.ByteString.Lazy.Char8 as B           
+
+import           Database.Persist
+import           Database.Persist.Sql
+import           Database.Persist.Sqlite
+
+import           Network.Wai
+import           Network.Wai.Handler.Warp as Warp
+
+import           Servant
+
+import           Data.Text
+
+import           Api
+import           Models
+import           Role
+
+#+END_SRC
+
+* Authentication Function
+
+#+NAME: session_auth
+#+BEGIN_SRC haskell
+-- to check if user passed has session in the session database
+-- if so, then return function
+sessionCheck :: User -> IO (User)
+sessionCheck currentSession 
+
+#+END_SRC
