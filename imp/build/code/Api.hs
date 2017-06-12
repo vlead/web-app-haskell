@@ -81,4 +81,5 @@ type SecureRoutes = "showUsers" :> Get '[JSON] [User]
              :<|> "deleteUser" :> ReqBody '[JSON] UniqueUserData :> Post '[JSON] (Maybe (User))
              :<|> "logout" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Session))
              
-type UserAPI = NonSecureRoutes :<|> SecureRoutes
+type UserAPI = (NonSecureRoutes)
+  :<|> (Header "auth-session" String :> SecureRoutes)

@@ -19,7 +19,8 @@ executable webapp-tryout
   other-modules :      Role,
                        Api,
                        App,
-                       Models 
+                       Models,
+                       Authentication 
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
                        -- custom dependencies

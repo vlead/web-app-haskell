@@ -1,10 +1,3 @@
-#+TITLE: Authentication Function for App
-
-
-* Language Extensions and Imports
-  
-#+NAME: extns_and_imports
-#+BEGIN_SRC haskell
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE LambdaCase        #-}
@@ -35,24 +28,18 @@ import           Api
 import           Models
 import           Role
 
-#+END_SRC
-
-* Authentication Handler
-
-#+NAME: auth_handler
-#+BEGIN_SRC haskell
-authCheck :: String -> ConnectionPool -> IO(Bool)
-authCheck authSession pool = flip runSqlPersistMPool pool $ do
-  ifExists <- selectFirst [SessionUserEmail ==. authSession] []
+-- to check if user passed has session in the session database
+-- if so, then return function
+sessionCheck :: ConnectionPool -> User -> IO (Bool)
+sessionCheck pool currentSession = flip runSqlPersistMPool pool $ do
+  ifExists <- selectFirst [SessionUserEmail ==. (userEmail currentSession)] []
   case ifExists of
     Nothing -> return False
     Just _  -> return True
 
-#+END_SRC
-* Tangling
-
-#+NAME: tangling
-#+BEGIN_SRC haskell :eval no :noweb yes :tangle Authentication.hs
-<<extns_and_imports>>
-<<auth_handler>>
-#+END_SRC
+authExec :: String -> ConnectionPool -> IO(Bool)
+authExec authSession pool = flip runSqlPersistMPool pool $ do
+  ifExists <- selectFirst [SessionUserEmail ==. authSession] []
+  case ifExists of
+    Nothing -> return False
+    Just _  -> return True
