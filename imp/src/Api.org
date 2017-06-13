@@ -115,6 +115,17 @@ instance FromJSON UniqueUserData where
 
 
 #+END_SRC
+** =Cat= : a cat
+
+#+NAME: cat
+#+BEGIN_SRC haskell
+data Cat = Cat {
+               Name :: String,
+               Fluffiness :: Int,
+               Adorable :: Bool
+               } deriving (Generic, Eq, Show, Read)
+
+#+END_SRC
 * API 
 
 ** Routes not requiring authentication

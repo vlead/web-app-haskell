@@ -1,8 +1,8 @@
-name:                webapp-tryout
+name:                web-app-haskell
 version:             0.1.0.0
 -- synopsis:
 -- description:
-homepage:            https://github.com/githubuser/webapp-tryout#readme
+homepage:            https://github.com/githubuser/web-app-haskell#readme
 license:             BSD3
 license-file:        LICENSE
 author:              Author name here
@@ -13,7 +13,7 @@ build-type:          Simple
 cabal-version:       >=1.10
 extra-source-files:  README.md
 
-executable webapp-tryout
+executable web-app-haskell
   hs-source-dirs:      build/code
   main-is:             Main.hs
   other-modules :      Role,

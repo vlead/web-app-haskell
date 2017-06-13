@@ -41,12 +41,15 @@ import           Role
 
 #+NAME: auth_handler
 #+BEGIN_SRC haskell
-authCheck :: String -> ConnectionPool -> IO(Bool)
+authCheck :: Maybe String -> ConnectionPool -> IO(Bool)
 authCheck authSession pool = flip runSqlPersistMPool pool $ do
-  ifExists <- selectFirst [SessionUserEmail ==. authSession] []
-  case ifExists of
+  case authSession of
     Nothing -> return False
-    Just _  -> return True
+    Just xs -> do
+      ifExists <- selectFirst [SessionUserEmail ==. xs] []
+      case ifExists of
+        Nothing -> return False
+        Just _  -> return True
 
 #+END_SRC
 * Tangling

@@ -37,33 +37,39 @@ toTextDatatype (UniqueUserData userData) = pack(userData)
 
 
 -- helper function for showUsersHandler
-showAllUsersHelper :: ConnectionPool -> IO ([User])
-showAllUsersHelper pool = flip runSqlPersistMPool pool $ do
-  users <- selectList [] []
-  return $ Prelude.map entityVal users
+showAllUsersHelper :: ConnectionPool -> Bool -> IO ([User])
+showAllUsersHelper pool authVal = flip runSqlPersistMPool pool $ case authVal of
+    False -> return []
+    True  -> do
+      users <- selectList [] []
+      return $ Prelude.map entityVal users
 
 
 -- helper function for addUserHandler
-addUserHelper :: User -> ConnectionPool -> IO (Maybe (Key (User)))
-addUserHelper newUser pool = flip runSqlPersistMPool pool $ do
-  exists <- selectFirst [UserName ==. (userName newUser)] []
-  case exists of
-    Nothing -> Just <$> insert newUser
-    Just _  -> return Nothing
+addUserHelper :: User -> ConnectionPool -> Bool -> IO (Maybe (Key (User)))
+addUserHelper newUser pool authVal = flip runSqlPersistMPool pool $ case authVal of
+  False -> return Nothing
+  True  -> do
+    exists <- selectFirst [UserName ==. (userName newUser)] []
+    case exists of
+      Nothing -> Just <$> insert newUser
+      Just _  -> return Nothing
 
 
 -- helper function for deleteUserHandler
-deleteUserHelper :: Text -> ConnectionPool -> IO ((Maybe (User)))
-deleteUserHelper userToDel pool = flip runSqlPersistMPool pool $ do
-  deletedUser <- selectFirst [UserEmail ==. unpack(userToDel)] []
-  case deletedUser of
-    Nothing -> return Nothing
-    Just _ -> do 
+deleteUserHelper :: Text -> ConnectionPool -> Bool -> IO ((Maybe (User)))
+deleteUserHelper userToDel pool authVal = flip runSqlPersistMPool pool $ case authVal of
+  False -> return Nothing
+  True  -> do
+    deletedUser <- selectFirst [UserEmail ==. unpack(userToDel)] []
+    case deletedUser of
+      Nothing -> return Nothing
+      Just _ -> do 
                  userIfDeleted <- deleteWhere [UserEmail ==. unpack(userToDel)]
                  return $ entityVal <$> deletedUser
 
 
--- helper function for loginHaqndler
+-- helper function for loginHandler
 loginHelper :: Session -> ConnectionPool -> IO (Maybe (Key (Session)))
 loginHelper newSession pool = flip runSqlPersistMPool pool $ do
   ifExists <- selectFirst [UserEmail ==. (sessionUserEmail newSession)] []
@@ -72,20 +78,21 @@ loginHelper newSession pool = flip runSqlPersistMPool pool $ do
     Just _  -> Just <$> insert newSession
   
 
-
 -- helper function for logoutHandler
-logoutHelper :: Session -> ConnectionPool -> IO (Maybe (Session))
-logoutHelper currentSession pool = flip runSqlPersistMPool pool $ do
-  ifExists <- selectFirst [SessionUserEmail ==. (sessionUserEmail currentSession), SessionUserRole ==. (sessionUserRole currentSession)] []
-  case ifExists of
-    Nothing -> return Nothing
-    Just _ -> do
-      deleteWhere [SessionUserEmail ==. (sessionUserEmail currentSession)]
-      return $ entityVal <$> ifExists
+logoutHelper :: Session -> ConnectionPool -> Bool -> IO (Maybe (Session))
+logoutHelper currentSession pool authVal = flip runSqlPersistMPool pool $ case authVal of
+  False -> return Nothing
+  True  -> do
+    ifExists <- selectFirst [SessionUserEmail ==. (sessionUserEmail currentSession), SessionUserRole ==. (sessionUserRole currentSession)] []
+    case ifExists of
+      Nothing -> return Nothing
+      Just _ -> do
+        deleteWhere [SessionUserEmail ==. (sessionUserEmail currentSession)]
+        return $ entityVal <$> ifExists
       
   
 
--- to check if admin user exists
+-- | To check if admin user exists
 adminUserCheck :: ConnectionPool -> IO(String)
 adminUserCheck pool = flip runSqlPersistMPool pool $ do
   adminUser <- selectFirst [UserRoles ==. Admin] []
@@ -96,6 +103,10 @@ adminUserCheck pool = flip runSqlPersistMPool pool $ do
     Just _ -> return "Admin User Exists"
     
 
+-- | To kill all sessions in database on initialisation
+assassinitSessions :: ConnectionPool -> IO ()
+assassinitSessions pool = flip runSqlPersistMPool pool $
+  deleteWhere ([] :: [Filter Session])
 
 server :: ConnectionPool -> Server UserAPI
 server pool =
@@ -119,16 +130,16 @@ server pool =
       where
 
         showUsersHandler :: Maybe (String) -> Handler ([User])
-        showUsersHandler authSession = liftIO $ showAllUsersHelper pool 
-
+        showUsersHandler authSession = liftIO $ (showAllUsersHelper pool) =<< (authCheck authSession pool)
+          
         addUserHandler :: Maybe (String) -> UserData -> Handler (Maybe (Key (User)))
-        addUserHandler authSession newUser = liftIO $ addUserHelper (toUserDatatype newUser) pool
+        addUserHandler authSession newUser = liftIO $ addUserHelper (toUserDatatype newUser) pool =<< authCheck authSession pool
 
         deleteUserHandler :: Maybe (String) -> UniqueUserData -> Handler (Maybe (User))
-        deleteUserHandler authSession userToDel = liftIO $ deleteUserHelper (toTextDatatype userToDel) pool
+        deleteUserHandler authSession userToDel = liftIO $ deleteUserHelper (toTextDatatype userToDel) pool =<< authCheck authSession pool
 
         logoutHandler :: Maybe (String) -> Session -> Handler (Maybe (Session))
-        logoutHandler authSession currentSession = liftIO $ logoutHelper currentSession pool
+        logoutHandler authSession currentSession = liftIO $ logoutHelper currentSession pool =<< authCheck authSession pool
 
 
 -- function that takes the server function and returns a WAI application 
@@ -147,6 +158,7 @@ mkApp sqliteFile = do
 
   runSqlPool (runMigration migrateAll) pool
   adminUserCheck pool
+  assassinitSessions pool
   return $ app pool
 
 

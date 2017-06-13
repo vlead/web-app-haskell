@@ -28,18 +28,12 @@ import           Api
 import           Models
 import           Role
 
--- to check if user passed has session in the session database
--- if so, then return function
-sessionCheck :: ConnectionPool -> User -> IO (Bool)
-sessionCheck pool currentSession = flip runSqlPersistMPool pool $ do
-  ifExists <- selectFirst [SessionUserEmail ==. (userEmail currentSession)] []
-  case ifExists of
+authCheck :: Maybe String -> ConnectionPool -> IO(Bool)
+authCheck authSession pool = flip runSqlPersistMPool pool $ do
+  case authSession of
     Nothing -> return False
-    Just _  -> return True
-
-authExec :: String -> ConnectionPool -> IO(Bool)
-authExec authSession pool = flip runSqlPersistMPool pool $ do
-  ifExists <- selectFirst [SessionUserEmail ==. authSession] []
-  case ifExists of
-    Nothing -> return False
-    Just _  -> return True
+    Just xs -> do
+      ifExists <- selectFirst [SessionUserEmail ==. xs] []
+      case ifExists of
+        Nothing -> return False
+        Just _  -> return True
