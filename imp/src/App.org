@@ -238,7 +238,7 @@ logoutHelper :: Session -> ConnectionPool -> Bool -> IO (Maybe (Session))
 logoutHelper currentSession pool authVal = flip runSqlPersistMPool pool $ case authVal of
   False -> return Nothing
   True  -> do
-    ifExists <- selectFirst [SessionUserEmail ==. (sessionUserEmail currentSession), SessionUserRole ==. (sessionUserRole currentSession)] []
+    ifExists <- selectFirst [SessionUserEmail ==. (sessionUserEmail currentSession), SessionUserRoles ==. (sessionUserRoles currentSession)] []
     case ifExists of
       Nothing -> return Nothing
       Just _ -> do

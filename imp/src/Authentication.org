@@ -1,6 +1,50 @@
 #+TITLE: Authentication Function for App
 
 
+* Introduction
+
+Authentication is implemented using sessions and cookie-based authentication.
+
+** Session
+
+A value of type =Session= is stored in the database for each user logged in.
+
+=Session= type has the following properties :
+
+  - SessionUserEmail :: Email of the logged-in user
+  - SessionUserRoles  :: Role of the logged-in user
+  - SessionId        :: Id of the session, which is passed as a cookie to the client.
+
+
+** Login
+
+A value of type =Session= is created and stored in the database upon login. A
+cookie corresponding to the newly-created session is sent to the client.
+** Logout
+
+The session corresponding to the logged-in user is deleted from the database
+upon logout.
+** Initialisation
+
+Upon initialisation, all sessions in the database are deleted, if any.
+** Authentication
+
+For routes that need authentication, a value of type =Int= - that corresponds
+to the =SessionId= of the current session- is passed as header.
+
+*** Admin Auth
+
+    - Usage :: Used to verify if logged-in user has role admin.
+    - Procedure :: check if session with =SessionId = authVal= has role
+                   =Admin=.
+    - Function :: =adminAuthCheck=
+    
+*** Login Auth
+
+    - Usage :: Used to verify if user is logged in.
+    - Procedure :: check if session with =SessionId = authVal= exists in the
+                   database.
+    - Function :: =authCheck=
 * Language Extensions and Imports
   
 #+NAME: extns_and_imports
@@ -37,10 +81,11 @@ import           Role
 
 #+END_SRC
 
-* Authentication Handler
+* Login Authentication Handler
 
 #+NAME: auth_handler
 #+BEGIN_SRC haskell
+-- | To check if user is logged in
 authCheck :: Maybe String -> ConnectionPool -> IO(Bool)
 authCheck authSession pool = flip runSqlPersistMPool pool $ do
   case authSession of
@@ -52,6 +97,7 @@ authCheck authSession pool = flip runSqlPersistMPool pool $ do
         Just _  -> return True
 
 #+END_SRC
+* Admin 
 * Tangling
 
 #+NAME: tangling

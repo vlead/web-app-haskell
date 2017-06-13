@@ -28,6 +28,7 @@ import           Api
 import           Models
 import           Role
 
+-- | To check if user is logged in
 authCheck :: Maybe String -> ConnectionPool -> IO(Bool)
 authCheck authSession pool = flip runSqlPersistMPool pool $ do
   case authSession of

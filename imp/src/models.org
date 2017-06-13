@@ -48,7 +48,7 @@ the way Template Haskell in the main =Models= module is parsed.)
    
 #+NAME: external_types
 #+BEGIN_SRC haskell :tangle Role.hs
--- @Role.hs
+-- Role.hs
 -- defining the enumerated Role datatype
 
 {-# LANGUAGE TemplateHaskell #-}
@@ -68,7 +68,14 @@ data Role = Admin | NonAdmin
 instance ToJSON Role where
   toJSON Admin = object [pack("role") .= "Admin"]
   toJSON NonAdmin = object [pack("role") .= "NonAdmin"]
-    
+
+instance FromJSON Role where
+  parseJSON (Object o) = do
+    role <- o .: pack("role")
+    case (role :: String) of
+      "Admin" -> return Admin
+      "NonAdmin" -> return NonAdmin
+
 -- storing this datatype as a PersistField type
 derivePersistField "Role"
 
@@ -90,7 +97,8 @@ User
   deriving Eq Read Show
 Session
   userEmail String
-  userRole String
+  userRoles Role
+  UniqueUserDetails userEmail userRoles
   deriving Eq Read Show
 |]
 
@@ -116,12 +124,12 @@ instance ToJSON User where
 instance FromJSON Session where
   parseJSON = withObject "Session" $ \ v ->
     Session <$> v .: "email"
-            <*> v .: "role"
+            <*> v .: "roles"
 
 instance ToJSON Session where
-  toJSON (Session sessionEmail sessionRole) =
+  toJSON (Session sessionEmail sessionRoles) =
     object ["email" .= sessionEmail
-            , "role" .= sessionRole ]
+            , "roles" .= sessionRoles ]
 
 #+END_SRC
 

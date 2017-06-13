@@ -30,7 +30,8 @@ User
   deriving Eq Read Show
 Session
   userEmail String
-  userRole String
+  userRoles Role
+  UniqueUserDetails userEmail userRoles
   deriving Eq Read Show
 |]
 
@@ -44,9 +45,9 @@ instance ToJSON User where
 instance FromJSON Session where
   parseJSON = withObject "Session" $ \ v ->
     Session <$> v .: "email"
-            <*> v .: "role"
+            <*> v .: "roles"
 
 instance ToJSON Session where
-  toJSON (Session sessionEmail sessionRole) =
+  toJSON (Session sessionEmail sessionRoles) =
     object ["email" .= sessionEmail
-            , "role" .= sessionRole ]
+            , "roles" .= sessionRoles ]
