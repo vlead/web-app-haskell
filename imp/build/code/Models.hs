@@ -42,6 +42,12 @@ instance ToJSON User where
            , "email"  .= email
            , "roles" .= roles]
 
+
+instance FromJSON User where
+  parseJSON = withObject "User" $ \ v ->
+    User <$> v .: "name"
+         <*> v .: "email"
+         <*> v .: "roles"
 instance FromJSON Session where
   parseJSON = withObject "Session" $ \ v ->
     Session <$> v .: "email"

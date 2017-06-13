@@ -41,22 +41,6 @@ import Database.Persist
 
 import Models
 import Servant.API
-data UserData = UserData {
-                         userDataName :: String
-                         , userDataEmail :: String
-                         } deriving (Show, Read, Eq)
-
-instance ToJSON UserData where
-  toJSON (UserData userDataName userDataEmail) =
-    object ["name" .= userDataName
-           ,"email" .= userDataEmail ]
-
-instance FromJSON UserData where
-  parseJSON = withObject "UserData" $ \ v ->
-    UserData <$> v .: "name"
-             <*> v .: "email"
- 
-
 
 data UniqueUserData = UniqueUserData {
                                        userData :: String
@@ -77,9 +61,9 @@ type NonSecureRoutes = "index" :> Get '[PlainText] Text
                      :<|> "login" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Key (Session)))
  
 type SecureRoutes = "showUsers" :> Get '[JSON] [User]
-             :<|> "addUser" :> ReqBody '[JSON] UserData :> Post '[JSON] (Maybe (Key User))
+             :<|> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (Key User))
              :<|> "deleteUser" :> ReqBody '[JSON] UniqueUserData :> Post '[JSON] (Maybe (User))
              :<|> "logout" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Session))
              
 type UserAPI = (NonSecureRoutes)
-  :<|> (Header "auth-session" String :> SecureRoutes)
+  :<|> (Header "Cookie" String :> SecureRoutes)

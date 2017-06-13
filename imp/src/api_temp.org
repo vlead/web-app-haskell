@@ -159,7 +159,7 @@ type SecureRoutes = "showUsers" :> Get '[JSON] [User]
 #+NAME: combined_api
 #+BEGIN_SRC haskell
 type UserAPI = (NonSecureRoutes)
-  :<|> (Header "Cookie" String :> SecureRoutes)
+  :<|> (QueryParam "session-id" String :> SecureRoutes)
 
 #+END_SRC
 

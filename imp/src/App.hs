@@ -29,8 +29,6 @@ import           Models
 import           Role
 import           Authentication 
 
-toUserDatatype :: UserData -> User
-toUserDatatype (UserData userDataName userDataEmail) = User {userName=userDataName,  userEmail=userDataEmail, userRoles=NonAdmin}
 
 toTextDatatype :: UniqueUserData -> Text
 toTextDatatype (UniqueUserData userData) = pack(userData)
@@ -116,7 +114,7 @@ server pool =
   where
 
     indexHandler :: Handler (Text)
-    indexHandler = return "Index Page"
+    indexHandler = return "Welcome to User Directory"
 
     loginHandler :: Session -> Handler (Maybe (Key (Session)))
     loginHandler newSession = liftIO $ loginHelper newSession pool
@@ -130,16 +128,20 @@ server pool =
       where
 
         showUsersHandler :: Maybe (String) -> Handler ([User])
-        showUsersHandler authSession = liftIO $ (showAllUsersHelper pool) =<< (authCheck authSession pool)
+        showUsersHandler authSession = liftIO $
+          showAllUsersHelper pool =<< (loginCheck pool $ headerCheck authSession)
           
-        addUserHandler :: Maybe (String) -> UserData -> Handler (Maybe (Key (User)))
-        addUserHandler authSession newUser = liftIO $ addUserHelper (toUserDatatype newUser) pool =<< authCheck authSession pool
+        addUserHandler :: Maybe (String) -> User -> Handler (Maybe (Key (User)))
+        addUserHandler authSession newUser = liftIO $
+          addUserHelper newUser pool =<< (adminAuthCheck pool $ headerCheck authSession)
 
         deleteUserHandler :: Maybe (String) -> UniqueUserData -> Handler (Maybe (User))
-        deleteUserHandler authSession userToDel = liftIO $ deleteUserHelper (toTextDatatype userToDel) pool =<< authCheck authSession pool
+        deleteUserHandler authSession userToDel = liftIO $
+          deleteUserHelper (toTextDatatype userToDel) pool =<< (adminAuthCheck pool $ headerCheck authSession)
 
         logoutHandler :: Maybe (String) -> Session -> Handler (Maybe (Session))
-        logoutHandler authSession currentSession = liftIO $ logoutHelper currentSession pool =<< authCheck authSession pool
+        logoutHandler authSession currentSession = liftIO $
+          logoutHelper currentSession pool =<< (loginCheck pool $ headerCheck authSession)
 
 
 -- function that takes the server function and returns a WAI application 
