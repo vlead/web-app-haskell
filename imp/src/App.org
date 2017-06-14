@@ -161,11 +161,12 @@ toTextDatatype (UniqueUserData userData) = pack(userData)
 
 #+NAME: server
 #+BEGIN_SRC haskell
-
+  
 server :: ConnectionPool -> Server UserAPI
 server pool =
-       (indexHandler :<|> loginHandler)
-  :<|> (authHandler)
+            indexHandler 
+       :<|> loginHandler
+       :<|> authRoutesHandler
 
   where
 
@@ -175,29 +176,33 @@ server pool =
     loginHandler :: Session -> Handler (Maybe (Key (Session)))
     loginHandler newSession = liftIO $ loginHelper newSession pool
 
-    authHandler authSession =   
-           (showUsersHandler authSession)
-      :<|> (addUserHandler authSession) 
-      :<|> (deleteUserHandler authSession)
-      :<|> (logoutHandler authSession)
+    authRoutesHandler authVal =
+           showUsersHandler authVal
+      :<|> addUserHandler authVal
+      :<|> deleteUserHandler authVal
+      :<|> logoutHandler authVal
 
       where
 
+        -- authorisation required: login
         showUsersHandler :: Maybe (String) -> Handler ([User])
-        showUsersHandler authSession = liftIO $
-          showAllUsersHelper pool =<< (loginCheck pool $ headerCheck authSession)
-          
+        showUsersHandler authVal = liftIO $
+          (showAllUsersHelper pool) =<< (loginCheck pool $ headerCheck authVal)
+
+        -- authorisation required: admin login
         addUserHandler :: Maybe (String) -> User -> Handler (Maybe (Key (User)))
-        addUserHandler authSession newUser = liftIO $
-          addUserHelper newUser pool =<< (adminAuthCheck pool $ headerCheck authSession)
+        addUserHandler authVal newUser = liftIO $
+          (addUserHelper newUser pool) =<< (adminAuthCheck pool $ headerCheck authVal)
 
+        -- authorisation required: admin login
         deleteUserHandler :: Maybe (String) -> UniqueUserData -> Handler (Maybe (User))
-        deleteUserHandler authSession userToDel = liftIO $
-          deleteUserHelper (toTextDatatype userToDel) pool =<< (adminAuthCheck pool $ headerCheck authSession)
+        deleteUserHandler authVal userToDel = liftIO $
+          (deleteUserHelper (toTextDatatype userToDel) pool) =<< (adminAuthCheck pool $ headerCheck authVal)
 
+        -- authorisation required: login
         logoutHandler :: Maybe (String) -> Session -> Handler (Maybe (Session))
-        logoutHandler authSession currentSession = liftIO $
-          logoutHelper currentSession pool =<< (loginCheck pool $ headerCheck authSession)
+        logoutHandler authVal currentSession = liftIO $
+          (logoutHelper currentSession pool) =<< (loginCheck pool $ headerCheck authVal)
 
 
 -- function that takes the server function and returns a WAI application 

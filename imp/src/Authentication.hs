@@ -29,6 +29,16 @@ import           Models
 import           Role
 
 -- All authentication-related values are prefixed with auth-
+  
+
+-- utility function to convert a string to an int
+toInt :: String -> Int
+toInt str = read str
+
+
+-- utility function to convert String value to SessionId
+toSessionId :: String -> SessionId
+toSessionId val = toSqlKey $ fromIntegral $ toInt val
 
 
 -- | To return sessionId value if header exists
@@ -43,7 +53,7 @@ headerCheck authVal = case authVal of
 -- | and False if user is not logged in
 loginCheck :: ConnectionPool -> String -> IO Bool
 loginCheck pool authSessionId = flip runSqlPersistMPool pool $ do
-  isLoggedIn <- get $ SessionKey $ read authSessionId
+  isLoggedIn <- get $ toSessionId authSessionId
   case isLoggedIn of
     Nothing -> return False
     Just _ -> return True
@@ -53,7 +63,7 @@ loginCheck pool authSessionId = flip runSqlPersistMPool pool $ do
 -- | And True if user is Admin user
 adminAuthCheck :: ConnectionPool -> String -> IO Bool
 adminAuthCheck pool authSessionId = flip runSqlPersistMPool pool $ do
-  roleOfLoggedInUser <- get $ SessionKey $ read authSessionId
+  roleOfLoggedInUser <- get $ toSessionId authSessionId
   case roleOfLoggedInUser of
     Nothing -> return False
     Just roleValue -> case (sessionUserRoles roleValue) of 

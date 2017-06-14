@@ -57,13 +57,12 @@ instance FromJSON UniqueUserData where
 
 
 
-type NonSecureRoutes = "index" :> Get '[PlainText] Text
-                     :<|> "login" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Key (Session)))
- 
-type SecureRoutes = "showUsers" :> Get '[JSON] [User]
-             :<|> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (Key User))
-             :<|> "deleteUser" :> ReqBody '[JSON] UniqueUserData :> Post '[JSON] (Maybe (User))
-             :<|> "logout" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Session))
-             
-type UserAPI = (NonSecureRoutes)
-  :<|> (Header "Cookie" String :> SecureRoutes)
+type UserAPI = "index" :> Get '[PlainText] Text
+          :<|> "login" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Key (Session)))
+          :<|> Header "Cookie" String :>
+          (
+                 "showUsers" :> Get '[JSON] [User]
+            :<|> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (Key User))
+            :<|> "deleteUser" :> ReqBody '[JSON] UniqueUserData :> Post '[JSON] (Maybe (User))
+            :<|> "logout" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Session))
+          )
