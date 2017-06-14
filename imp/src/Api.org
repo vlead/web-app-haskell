@@ -134,6 +134,13 @@ data Cat = Cat {
 
 #+END_SRC
 
+* Response Datatype
+
+#+NAME: response_type
+#+BEGIN_SRC haskell
+
+
+#+END_SRC
 * API 
 
 ** Routes not requiring authentication

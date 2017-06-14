@@ -1,3 +1,3 @@
-# Web App in Haskell
+# web-app-haskell
 
-An user directory web app written in Haskell
+An user directory web app written in Haskell.
