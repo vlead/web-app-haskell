@@ -1,23 +1,136 @@
 #+TITLE: Example Servant App
 
+
 * Introduction
 
-This is an example web API written using =Servant= , that interacts with a sqlite
-database via the haskell library =Persistent=.
+Controllers for handling the following routes :
 
-The API has six routes :
+** Routes not requiring authentication
 
-** Non-Secure Routes - Not Requiring Authentication
 
 *** index
+
+   - URL :: /index
+
+   - Content Type :: None
+
+   - Data Params :: None
+
+   - Success Response ::
+        
+        + Response Code: 200
+        + Response type: text/plain;charset=utf-8
+        + Content:
+
+          #+BEGIN_EXAMPLE
+"Welcome to User Directory"
+          #+END_EXAMPLE
+
+   - Error Response ::
+
+        + Code: 405 Method Not Allowed
+
 *** login
 
-** Secure Routes - Requiring Authentication
 
-*** showUsers
-*** addUser
-*** deleteUser
+   - URL :: /login
+            
+   - Method :: POST
+
+   - Content Type :: application/json
+
+   - Data Params :: 
+       {
+         "email" : <user-email>,
+         "roles" :
+           {
+             "role" : <user-role>
+           }
+       }
+
+   - Success Response ::
+     + Code: 200
+     + Content: 
+
+       #+BEGIN_EXAMPLE
+
+    {
+        "SessionId" : <session-id>
+    }
+       #+END_EXAMPLE
+
+   - Error Response ::
+
+     + Code: 400 Bad Request
+     + Content: 
+       { errBody : "Malformed arguments"}
+
+** Routes requiring login authentication
+
+*** showUser
+
+
+  - URL :: /showUsers
+  - Method :: GET
+
+  - URL Params ::  None
+       
+  - Success Response ::
+   
+    + Content ::
+      #+BEGIN_EXAMPLE
+  [
+	{
+        email: "abc@xyz.com",
+        roles:
+            role: "NonAdmin"
+        name: "Abc Def"
+    }
+  ]  
+      #+END_EXAMPLE
+
 *** logout
+** Routes requiring admin authentication
+*** addUser
+
+   - URL :: /addUser
+
+   - Method :: POST
+
+   - Data Params ::
+     {
+      'name': '<value>',
+      'email': '<value>',
+     }
+
+   - Success Response ::
+     + <userId>
+
+*** deleteUser
+
+   - URL :: /deleteUser
+
+   - Method :: POST
+
+   - Data Params ::
+     {
+       "data" : <user-email>
+     }
+
+   - Success Response ::
+        
+        + Content ::
+          
+          #+BEGIN_EXAMPLE
+{
+    "email" : "smallcat@email.com"
+    "roles" :
+        {
+            "role" : NonAdmin
+        }
+    "name" : "Small Cat"
+}
+          #+END_EXAMPLE
 
 * Language Extensions and Imports 
 
@@ -68,36 +181,9 @@ import Models
 import Servant.API
 #+END_SRC
 
-* Datatypes For Instruction Input
-
-Defining datatypes for the request body.
-
-** =UserData= : Type to input user details
-
-#+NAME: user_data
-#+BEGIN_SRC haskell
-data UserData = UserData {
-                           userDataName :: String
-                         , userDataEmail :: String
-                         , userDataRole :: String
-                         } deriving (Show, Read, Eq)
-
-
-instance ToJSON UserData where
-  toJSON (UserData userDataName userDataEmail userDataRole) =
-    object ["name" .= userDataName
-           ,"email" .= userDataEmail
-           ,"role" .= userDataRole]
-
-
-instance FromJSON UserData where
-  parseJSON = withObject "UserData" $ \ v ->
-    UserData <$> v .: "name"
-             <*> v .: "email"
-             <*> v .: "role"
- 
-
-#+END_SRC 
+* Custom Datatypes For Instruction Input
+  
+Defining custom datatypes for the request body when required.
 
 ** =UniqueUserData= : a unique value to identify the user by
 
@@ -134,10 +220,29 @@ data Cat = Cat {
 
 #+END_SRC
 
-* Response Datatype
+* Custom Datatypes for Response
 
-#+NAME: response_type
+Defining custom datatypes/instances for response.
+
+** ResponseUserId
+
+#+NAME: response_user_id
 #+BEGIN_SRC haskell
+data ResponseUserId = ResponseUserId {
+                                     userIdValue :: (Key (User))
+                                     } deriving (Generic, Eq, Read, Show)
+
+
+                      
+
+#+END_SRC
+** ResponseSessionId
+
+#+NAME: response_session_id
+#+BEGIN_SRC haskell
+data ResponseSessionId = ResponseSessionId {
+                                     sessionIdValue :: (Key (Session))
+                                     } deriving (Generic, Eq, Read, Show)
 
 
 #+END_SRC
@@ -169,11 +274,11 @@ type SecureRoutes = Header "Cookie" String
 #+NAME: combined_api
 #+BEGIN_SRC haskell
 type UserAPI = "index" :> Get '[PlainText] Text
-          :<|> "login" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Key (Session)))
+          :<|> "login" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (ResponseSessionId))
           :<|> Header "Cookie" String :>
           (
                  "showUsers" :> Get '[JSON] [User]
-            :<|> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (Key User))
+            :<|> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (ResponseUserId))
             :<|> "deleteUser" :> ReqBody '[JSON] UniqueUserData :> Post '[JSON] (Maybe (User))
             :<|> "logout" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Session))
           )
@@ -186,5 +291,7 @@ type UserAPI = "index" :> Get '[PlainText] Text
 #+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
 <<extns_and_imports>>
 <<unique_user_data>>
+<<response_user_id>>
+<<response_session_id>>
 <<combined_api>>
 #+END_SRC

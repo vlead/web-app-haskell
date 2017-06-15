@@ -7,6 +7,7 @@
 {-# LANGUAGE QuasiQuotes                #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
+
 module Models where
 import Data.Aeson
 import Data.Text
@@ -34,26 +35,3 @@ Session
   UniqueUserDetails userEmail userRoles
   deriving Eq Read Show
 |]
-
-
-instance ToJSON User where
-  toJSON (User name email roles) =
-    object [ "name" .= name
-           , "email"  .= email
-           , "roles" .= roles]
-
-
-instance FromJSON User where
-  parseJSON = withObject "User" $ \ v ->
-    User <$> v .: "name"
-         <*> v .: "email"
-         <*> v .: "roles"
-instance FromJSON Session where
-  parseJSON = withObject "Session" $ \ v ->
-    Session <$> v .: "email"
-            <*> v .: "roles"
-
-instance ToJSON Session where
-  toJSON (Session sessionEmail sessionRoles) =
-    object ["email" .= sessionEmail
-            , "roles" .= sessionRoles ]

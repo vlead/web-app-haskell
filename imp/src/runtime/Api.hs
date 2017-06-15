@@ -57,12 +57,24 @@ instance FromJSON UniqueUserData where
 
 
 
+data ResponseUserId = ResponseUserId {
+                                     userIdValue :: (Key (User))
+                                     } deriving (Generic, Eq, Read, Show)
+
+
+                      
+
+data ResponseSessionId = ResponseSessionId {
+                                     sessionIdValue :: (Key (Session))
+                                     } deriving (Generic, Eq, Read, Show)
+
+
 type UserAPI = "index" :> Get '[PlainText] Text
-          :<|> "login" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Key (Session)))
+          :<|> "login" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (ResponseSessionId))
           :<|> Header "Cookie" String :>
           (
                  "showUsers" :> Get '[JSON] [User]
-            :<|> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (Key User))
+            :<|> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (ResponseUserId))
             :<|> "deleteUser" :> ReqBody '[JSON] UniqueUserData :> Post '[JSON] (Maybe (User))
             :<|> "logout" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Session))
           )

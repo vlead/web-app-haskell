@@ -14,7 +14,7 @@ extra-source-files:  README.md
 cabal-version:       >=1.10
 
 executable web-app-haskell
-  hs-source-dirs:      build/code
+  hs-source-dirs:      build/code/runtime
   main-is:             Main.hs
   other-modules :      Role,
                        Api,
@@ -54,7 +54,7 @@ executable web-app-haskell
 
 test-suite web-app-haskell-test
   type:                exitcode-stdio-1.0
-  hs-source-dirs:      test
+  hs-source-dirs:      build/code/test
   main-is:             Spec.hs
   build-depends:       base
                      , web-app-haskell

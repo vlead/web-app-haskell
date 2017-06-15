@@ -7,6 +7,8 @@
 
 module App where
 
+import           Data.Aeson
+import           Data.Text
 import           Control.Monad.IO.Class
 import           Control.Monad.Logger (runStderrLoggingT)
 
@@ -34,6 +36,48 @@ toTextDatatype :: UniqueUserData -> Text
 toTextDatatype (UniqueUserData userData) = pack(userData)
 
 
+instance ToJSON User where
+  toJSON (User name email roles) =
+    object [ "name" .= name
+           , "email"  .= email
+           , "roles" .= roles]
+
+
+instance FromJSON User where
+  parseJSON = withObject "User" $ \ v ->
+    User <$> v .: "name"
+         <*> v .: "email"
+         <*> v .: "roles"
+instance FromJSON Session where
+  parseJSON = withObject "Session" $ \ v ->
+    Session <$> v .: "email"
+            <*> v .: "roles"
+
+instance ToJSON Session where
+  toJSON (Session sessionEmail sessionRoles) =
+    object ["email" .= sessionEmail
+          , "roles" .= sessionRoles]
+
+
+instance FromJSON ResponseUserId where
+  parseJSON (Object o) =
+     ResponseUserId <$> o .: "UserId"
+
+instance ToJSON ResponseUserId where
+  toJSON (ResponseUserId value)  =
+    object ["UserId" .= value]
+
+
+instance FromJSON ResponseSessionId where
+  parseJSON (Object o) =
+     ResponseSessionId <$> o .: "SessionId"
+
+instance ToJSON ResponseSessionId where
+  toJSON (ResponseSessionId value) =
+    object ["SessionId" .= value]
+
+
+
 -- helper function for showUsersHandler
 showAllUsersHelper :: ConnectionPool -> Bool -> IO ([User])
 showAllUsersHelper pool authVal = flip runSqlPersistMPool pool $ case authVal of
@@ -44,13 +88,13 @@ showAllUsersHelper pool authVal = flip runSqlPersistMPool pool $ case authVal of
 
 
 -- helper function for addUserHandler
-addUserHelper :: User -> ConnectionPool -> Bool -> IO (Maybe (Key (User)))
+addUserHelper :: User -> ConnectionPool -> Bool -> IO (Maybe (ResponseUserId))
 addUserHelper newUser pool authVal = flip runSqlPersistMPool pool $ case authVal of
   False -> return Nothing
   True  -> do
     exists <- selectFirst [UserName ==. (userName newUser)] []
     case exists of
-      Nothing -> Just <$> insert newUser
+      Nothing -> Just <$> (ResponseUserId <$> insert newUser)
       Just _  -> return Nothing
 
 
@@ -68,12 +112,12 @@ deleteUserHelper userToDel pool authVal = flip runSqlPersistMPool pool $ case au
 
 
 -- helper function for loginHandler
-loginHelper :: Session -> ConnectionPool -> IO (Maybe (Key (Session)))
+loginHelper :: Session -> ConnectionPool -> IO (Maybe (ResponseSessionId))
 loginHelper newSession pool = flip runSqlPersistMPool pool $ do
   ifExists <- selectFirst [UserEmail ==. (sessionUserEmail newSession)] []
   case ifExists of
     Nothing -> return Nothing
-    Just _  -> Just <$> insert newSession
+    Just _  -> Just <$> (ResponseSessionId <$> insert newSession)
   
 
 -- helper function for logoutHandler
@@ -102,8 +146,8 @@ adminUserCheck pool = flip runSqlPersistMPool pool $ do
     
 
 -- | To kill all sessions in database on initialisation
-assassinitSessions :: ConnectionPool -> IO ()
-assassinitSessions pool = flip runSqlPersistMPool pool $
+assassinateSessions :: ConnectionPool -> IO ()
+assassinateSessions pool = flip runSqlPersistMPool pool $
   deleteWhere ([] :: [Filter Session])
   
 server :: ConnectionPool -> Server UserAPI
@@ -117,7 +161,7 @@ server pool =
     indexHandler :: Handler (Text)
     indexHandler = return "Welcome to User Directory"
 
-    loginHandler :: Session -> Handler (Maybe (Key (Session)))
+    loginHandler :: Session -> Handler (Maybe (ResponseSessionId))
     loginHandler newSession = liftIO $ loginHelper newSession pool
 
     authRoutesHandler authVal =
@@ -134,9 +178,9 @@ server pool =
           (showAllUsersHelper pool) =<< (loginCheck pool $ headerCheck authVal)
 
         -- authorisation required: admin login
-        addUserHandler :: Maybe (String) -> User -> Handler (Maybe (Key (User)))
+        addUserHandler :: Maybe (String) -> User -> Handler (Maybe (ResponseUserId))
         addUserHandler authVal newUser = liftIO $
-          (addUserHelper newUser pool) =<< (adminAuthCheck pool $ headerCheck authVal)
+           (addUserHelper newUser pool) =<< (adminAuthCheck pool $ headerCheck authVal)
 
         -- authorisation required: admin login
         deleteUserHandler :: Maybe (String) -> UniqueUserData -> Handler (Maybe (User))
@@ -165,7 +209,7 @@ mkApp sqliteFile = do
 
   runSqlPool (runMigration migrateAll) pool
   adminUserCheck pool
-  assassinitSessions pool
+  assassinateSessions pool
   return $ app pool
 
 

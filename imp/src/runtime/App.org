@@ -116,6 +116,8 @@ Controllers for handling the following routes :
 
 module App where
 
+import           Data.Aeson
+import           Data.Text
 import           Control.Monad.IO.Class
 import           Control.Monad.Logger (runStderrLoggingT)
 
@@ -140,15 +142,17 @@ import           Authentication
 
 #+END_SRC
 
-* Converting To And From Route Datatypes
+* Datatype Work 
 
-** =UserData= to =User=
+** Converting To And From Route Datatypes
+
+*** =UserData= to =User=
 #+NAME: from_userdata_to_user
 #+BEGIN_SRC haskell
 toUserDatatype :: UserData -> User
 toUserDatatype (UserData userDataName userDataEmail) = User {userName=userDataName,  userEmail=userDataEmail, userRoles=NonAdmin}
 #+END_SRC
-** =UniqueUserData= to =Text=
+*** =UniqueUserData= to =Text=
 
 #+NAME: from_uniqueuserdata_to_text
 #+BEGIN_SRC haskell
@@ -157,6 +161,74 @@ toTextDatatype :: UniqueUserData -> Text
 toTextDatatype (UniqueUserData userData) = pack(userData)
 
 #+END_SRC
+** Jsonifying Datatypes
+
+
+*** Jsonifying User Datatype
+
+#+NAME: jsonify_user
+#+BEGIN_SRC haskell
+
+instance ToJSON User where
+  toJSON (User name email roles) =
+    object [ "name" .= name
+           , "email"  .= email
+           , "roles" .= roles]
+
+
+instance FromJSON User where
+  parseJSON = withObject "User" $ \ v ->
+    User <$> v .: "name"
+         <*> v .: "email"
+         <*> v .: "roles"
+#+END_SRC
+
+*** Jsonifying Session Datatype
+
+#+NAME: jsonify_session
+#+BEGIN_SRC haskell
+instance FromJSON Session where
+  parseJSON = withObject "Session" $ \ v ->
+    Session <$> v .: "email"
+            <*> v .: "roles"
+
+instance ToJSON Session where
+  toJSON (Session sessionEmail sessionRoles) =
+    object ["email" .= sessionEmail
+          , "roles" .= sessionRoles]
+
+
+#+END_SRC
+
+*** Jsonifying ResponseUserId Datatype
+
+#+NAME: jsonify_user_id
+#+BEGIN_SRC haskell
+instance FromJSON ResponseUserId where
+  parseJSON (Object o) =
+     ResponseUserId <$> o .: "UserId"
+
+instance ToJSON ResponseUserId where
+  toJSON (ResponseUserId value)  =
+    object ["UserId" .= value]
+
+
+#+END_SRC
+*** Jsonifying ResponseSessionId Datatype
+
+#+NAME: jsonify_session_id
+#+BEGIN_SRC haskell
+instance FromJSON ResponseSessionId where
+  parseJSON (Object o) =
+     ResponseSessionId <$> o .: "SessionId"
+
+instance ToJSON ResponseSessionId where
+  toJSON (ResponseSessionId value) =
+    object ["SessionId" .= value]
+
+
+#+END_SRC
+
 * Server
 
 #+NAME: server
@@ -173,7 +245,7 @@ server pool =
     indexHandler :: Handler (Text)
     indexHandler = return "Welcome to User Directory"
 
-    loginHandler :: Session -> Handler (Maybe (Key (Session)))
+    loginHandler :: Session -> Handler (Maybe (ResponseSessionId))
     loginHandler newSession = liftIO $ loginHelper newSession pool
 
     authRoutesHandler authVal =
@@ -190,9 +262,9 @@ server pool =
           (showAllUsersHelper pool) =<< (loginCheck pool $ headerCheck authVal)
 
         -- authorisation required: admin login
-        addUserHandler :: Maybe (String) -> User -> Handler (Maybe (Key (User)))
+        addUserHandler :: Maybe (String) -> User -> Handler (Maybe (ResponseUserId))
         addUserHandler authVal newUser = liftIO $
-          (addUserHelper newUser pool) =<< (adminAuthCheck pool $ headerCheck authVal)
+           (addUserHelper newUser pool) =<< (adminAuthCheck pool $ headerCheck authVal)
 
         -- authorisation required: admin login
         deleteUserHandler :: Maybe (String) -> UniqueUserData -> Handler (Maybe (User))
@@ -221,7 +293,7 @@ mkApp sqliteFile = do
 
   runSqlPool (runMigration migrateAll) pool
   adminUserCheck pool
-  assassinitSessions pool
+  assassinateSessions pool
   return $ app pool
 
 
@@ -234,7 +306,9 @@ run sqliteFile =
       
 * Controllers
   
-#+NAME:  controllers
+** showUsers controller
+
+#+NAME: show_all_users_helper
 #+BEGIN_SRC haskell 
 
 -- helper function for showUsersHandler
@@ -245,17 +319,29 @@ showAllUsersHelper pool authVal = flip runSqlPersistMPool pool $ case authVal of
       users <- selectList [] []
       return $ Prelude.map entityVal users
 
+#+END_SRC
+
+** addUser controller
+
+#+NAME: add_user_helper
+#+BEGIN_SRC haskell
 
 -- helper function for addUserHandler
-addUserHelper :: User -> ConnectionPool -> Bool -> IO (Maybe (Key (User)))
+addUserHelper :: User -> ConnectionPool -> Bool -> IO (Maybe (ResponseUserId))
 addUserHelper newUser pool authVal = flip runSqlPersistMPool pool $ case authVal of
   False -> return Nothing
   True  -> do
     exists <- selectFirst [UserName ==. (userName newUser)] []
     case exists of
-      Nothing -> Just <$> insert newUser
+      Nothing -> Just <$> (ResponseUserId <$> insert newUser)
       Just _  -> return Nothing
 
+#+END_SRC
+
+** deleteUser controller
+
+#+NAME: delete_user_helper
+#+BEGIN_SRC haskell
 
 -- helper function for deleteUserHandler
 deleteUserHelper :: Text -> ConnectionPool -> Bool -> IO ((Maybe (User)))
@@ -269,15 +355,27 @@ deleteUserHelper userToDel pool authVal = flip runSqlPersistMPool pool $ case au
                  userIfDeleted <- deleteWhere [UserEmail ==. unpack(userToDel)]
                  return $ entityVal <$> deletedUser
 
+#+END_SRC
+
+** login controller
+
+#+NAME: login_helper
+#+BEGIN_SRC haskell
 
 -- helper function for loginHandler
-loginHelper :: Session -> ConnectionPool -> IO (Maybe (Key (Session)))
+loginHelper :: Session -> ConnectionPool -> IO (Maybe (ResponseSessionId))
 loginHelper newSession pool = flip runSqlPersistMPool pool $ do
   ifExists <- selectFirst [UserEmail ==. (sessionUserEmail newSession)] []
   case ifExists of
     Nothing -> return Nothing
-    Just _  -> Just <$> insert newSession
+    Just _  -> Just <$> (ResponseSessionId <$> insert newSession)
   
+#+END_SRC
+
+** logout controller
+
+#+NAME: logout_helper
+#+BEGIN_SRC haskell
 
 -- helper function for logoutHandler
 logoutHelper :: Session -> ConnectionPool -> Bool -> IO (Maybe (Session))
@@ -293,14 +391,9 @@ logoutHelper currentSession pool authVal = flip runSqlPersistMPool pool $ case a
       
   
 #+END_SRC
-  
--- note: <$> is the infix symbol for =fmap=
--- note: using Prelude.map to avoid confusion with Data.Text.Map 
--- note: DB actions are IO actions, and will therefore return a value of IO ()
--- and therefore we need to use liftIO () to raise it to the Handler monad
--- this is where monad transformations come in
 
-* Admin User Invariant
+* Initialisation Functions
+** Admin User Invariant
 
 Admin user invariants include :
 
@@ -322,15 +415,15 @@ adminUserCheck pool = flip runSqlPersistMPool pool $ do
     
 
 #+END_SRC
-* Kill Sessions At Initialization 
-
+** Kill Sessions At Initialization 
+  
 To kill any sessions in the database when the webapp is booted.
 
-#+NAME: assassinit_sessions
+#+NAME: assassinate_sessions
 #+BEGIN_SRC haskell
 -- | To kill all sessions in database on initialisation
-assassinitSessions :: ConnectionPool -> IO ()
-assassinitSessions pool = flip runSqlPersistMPool pool $
+assassinateSessions :: ConnectionPool -> IO ()
+assassinateSessions pool = flip runSqlPersistMPool pool $
   deleteWhere ([] :: [Filter Session])
 #+END_SRC
 
@@ -340,8 +433,16 @@ assassinitSessions pool = flip runSqlPersistMPool pool $
 #+BEGIN_SRC haskell :eval no :noweb yes :tangle App.hs
 <<extns_and_imports>>
 <<from_uniqueuserdata_to_text>>
-<<controllers>>
+<<jsonify_user>>
+<<jsonify_session>>
+<<jsonify_user_id>>
+<<jsonify_session_id>>
+<<show_all_users_helper>>
+<<add_user_helper>>
+<<delete_user_helper>>
+<<login_helper>>
+<<logout_helper>>
 <<admin_user_invariant>>
-<<assassinit_sessions>>
+<<assassinate_sessions>>
 <<server>>
 #+END_SRC

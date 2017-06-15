@@ -26,6 +26,7 @@ We define here a single database that stores a value - User.
 {-# LANGUAGE QuasiQuotes                #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
+
 module Models where
 import Data.Aeson
 import Data.Text
@@ -104,47 +105,10 @@ Session
 
 #+END_SRC
 
-* User Instances Of
-
-#+NAME: user_instances_of
-#+BEGIN_SRC haskell
-
-instance ToJSON User where
-  toJSON (User name email roles) =
-    object [ "name" .= name
-           , "email"  .= email
-           , "roles" .= roles]
-
-
-instance FromJSON User where
-  parseJSON = withObject "User" $ \ v ->
-    User <$> v .: "name"
-         <*> v .: "email"
-         <*> v .: "roles"
-#+END_SRC
-
-* Session Instances Of
-
-#+NAME: session_instances_of
-#+BEGIN_SRC haskell
-instance FromJSON Session where
-  parseJSON = withObject "Session" $ \ v ->
-    Session <$> v .: "email"
-            <*> v .: "roles"
-
-instance ToJSON Session where
-  toJSON (Session sessionEmail sessionRoles) =
-    object ["email" .= sessionEmail
-            , "roles" .= sessionRoles ]
-
-#+END_SRC
-
 * Tangling 
 
 #+NAME: tangling
 #+BEGIN_SRC haskell :eval no :noweb yes :tangle Models.hs
 <<extns_and_imports>>
 <<database_models>>
-<<user_instances_of>>
-<<session_instances_of>>
 #+END_SRC
