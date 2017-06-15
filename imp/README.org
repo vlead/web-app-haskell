@@ -1,0 +1,10 @@
+#+TITLE: web-app-haskell
+
+An user directory web app written in Haskell.
+
+* To Run
+
+#+BEGIN_EXAMPLE
+chmod +x run.sh
+./run.sh
+#+END_EXAMPLE
