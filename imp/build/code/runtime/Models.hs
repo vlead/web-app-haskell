@@ -26,12 +26,12 @@ User
   name String
   email String
   roles Role
-  UniqueName name
   UniqueEmail email
   deriving Eq Read Show
 Session
+  mappingToUser UserId
   userEmail String
   userRoles Role
-  UniqueUserDetails userEmail userRoles
+  UniqueSessionDetails userEmail userRoles
   deriving Eq Read Show
 |]

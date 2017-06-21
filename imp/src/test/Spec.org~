@@ -1,0 +1,7 @@
+#+TITLE: Spec
+
+
+#+BEGIN_SRC haskell :tangle Spec.hs
+plusOne x = x + 1
+
+#+END_SRC

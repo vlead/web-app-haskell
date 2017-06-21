@@ -1,7 +1,9 @@
 #+TITLE: Spec
 
 
+Test suite for =web-app-haskell=.
+
 #+BEGIN_SRC haskell :tangle Spec.hs
-plusOne x = x + 1
+{-# OPTIONS_GHC -F -pgmF hspec-discover #-}
 
 #+END_SRC

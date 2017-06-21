@@ -1,0 +1,71 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TypeOperators #-}
+
+
+module AppSpec where
+
+
+import Data.Aeson
+import Data.Proxy 
+import Data.Text
+
+import GHC.Generics
+
+import Control.Exception (throwIO, ErrorCall(..))
+import Control.Monad.Trans.Except
+
+import Network.HTTP.Client
+import Network.Wai.Handler.Warp
+ 
+import Servant.API
+import Servant.Client
+
+import App
+import Models
+import Api
+import Role
+
+import Test.Hspec
+import Test.Mockery.Directory
+import Test.QuickCheck
+
+ 
+-- query function types
+testIndex :: Manager -> BaseUrl -> ClientM Text
+testLogin :: Session -> Manager -> BaseUrl -> ClientM (Maybe (ResponseSessionId))
+testShowUsers :: Maybe (String) ->  Manager -> BaseUrl -> ClientM [User]
+testAddUser :: Maybe (String) -> User -> Manager -> BaseUrl -> ClientM (Maybe (ResponseUserId))
+testDeleteUser :: Maybe (String) -> UniqueUserData -> Manager -> BaseUrl -> ClientM (Maybe (User))
+testLogout :: Maybe (String) -> Session -> Manager -> BaseUrl -> ClientM (Maybe (Session))
+
+
+-- a proxy to our API
+userAPI :: Data.Proxy.Proxy UserAPI
+userAPI = Data.Proxy.Proxy
+
+
+-- code that returns the client functions for our API
+testIndex :<|> testLogin :<|> testShowUsers :<|> testAddUser :<|> testDeleteUser :<|> testLogout = client userAPI 
+
+spec :: Spec
+spec = do
+  around withApp $ do
+    describe "/index" $ do
+      it "Returns value from Index page" $ \ port -> do
+        try port testIndex `shouldReturn` pack("Welcome to User Directorya")
+
+withApp :: (Int -> IO a) -> IO a
+withApp action =
+  inTempDirectory $ do
+    app <- mkApp "sqlite.db"
+    testWithApplication (return app) action
+
+try :: Int -> (Manager -> BaseUrl -> ClientM a) -> IO a
+try port action = do
+  manager <- newManager defaultManagerSettings
+  let baseUrl = BaseUrl Http "localhost" port ""
+  result <- runExceptT $ action manager baseUrl
+  case result of
+    Left err -> throwIO $ ErrorCall $ show err
+    Right a -> return a

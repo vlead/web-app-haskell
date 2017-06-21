@@ -71,10 +71,7 @@ data ResponseSessionId = ResponseSessionId {
 
 type UserAPI = "index" :> Get '[PlainText] Text
           :<|> "login" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (ResponseSessionId))
-          :<|> Header "Cookie" String :>
-          (
-                 "showUsers" :> Get '[JSON] [User]
-            :<|> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (ResponseUserId))
-            :<|> "deleteUser" :> ReqBody '[JSON] UniqueUserData :> Post '[JSON] (Maybe (User))
-            :<|> "logout" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Session))
-          )
+          :<|> Header "Cookie" String :> "showUsers" :> Get '[JSON] [User]
+          :<|> Header "Cookie" String :> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (ResponseUserId))
+          :<|> Header "Cookie" String :> "deleteUser" :> ReqBody '[JSON] UniqueUserData :> Post '[JSON] (Maybe (User))
+          :<|> Header "Cookie" String :> "logout" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Session))

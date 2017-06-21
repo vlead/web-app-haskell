@@ -50,13 +50,15 @@ instance FromJSON User where
          <*> v .: "roles"
 instance FromJSON Session where
   parseJSON = withObject "Session" $ \ v ->
-    Session <$> v .: "email"
+    Session <$> v .: "userId"
+            <*> v .: "email"
             <*> v .: "roles"
 
 instance ToJSON Session where
-  toJSON (Session sessionEmail sessionRoles) =
-    object ["email" .= sessionEmail
-          , "roles" .= sessionRoles]
+  toJSON (Session sessionUserId sessionEmail sessionRoles) =
+    object ["userId" .= sessionUserId
+          ,  "email"  .= sessionEmail
+          , "roles"  .= sessionRoles]
 
 
 instance FromJSON ResponseUserId where
@@ -154,7 +156,10 @@ server :: ConnectionPool -> Server UserAPI
 server pool =
             indexHandler 
        :<|> loginHandler
-       :<|> authRoutesHandler
+       :<|> showUsersHandler
+       :<|> addUserHandler
+       :<|> deleteUserHandler
+       :<|> logoutHandler
 
   where
 
@@ -164,33 +169,25 @@ server pool =
     loginHandler :: Session -> Handler (Maybe (ResponseSessionId))
     loginHandler newSession = liftIO $ loginHelper newSession pool
 
-    authRoutesHandler authVal =
-           showUsersHandler authVal
-      :<|> addUserHandler authVal
-      :<|> deleteUserHandler authVal
-      :<|> logoutHandler authVal
+    -- authorisation required: login
+    showUsersHandler :: Maybe (String) -> Handler ([User])
+    showUsersHandler authVal = liftIO $
+      (showAllUsersHelper pool) =<< (loginCheck pool $ headerCheck authVal)
 
-      where
+    -- authorisation required: admin login
+    addUserHandler :: Maybe (String) -> User -> Handler (Maybe (ResponseUserId))
+    addUserHandler authVal newUser = liftIO $
+       (addUserHelper newUser pool) =<< (adminAuthCheck pool $ headerCheck authVal)
 
-        -- authorisation required: login
-        showUsersHandler :: Maybe (String) -> Handler ([User])
-        showUsersHandler authVal = liftIO $
-          (showAllUsersHelper pool) =<< (loginCheck pool $ headerCheck authVal)
+    -- authorisation required: admin login
+    deleteUserHandler :: Maybe (String) -> UniqueUserData -> Handler (Maybe (User))
+    deleteUserHandler authVal userToDel = liftIO $
+      (deleteUserHelper (toTextDatatype userToDel) pool) =<< (adminAuthCheck pool $ headerCheck authVal)
 
-        -- authorisation required: admin login
-        addUserHandler :: Maybe (String) -> User -> Handler (Maybe (ResponseUserId))
-        addUserHandler authVal newUser = liftIO $
-           (addUserHelper newUser pool) =<< (adminAuthCheck pool $ headerCheck authVal)
-
-        -- authorisation required: admin login
-        deleteUserHandler :: Maybe (String) -> UniqueUserData -> Handler (Maybe (User))
-        deleteUserHandler authVal userToDel = liftIO $
-          (deleteUserHelper (toTextDatatype userToDel) pool) =<< (adminAuthCheck pool $ headerCheck authVal)
-
-        -- authorisation required: login
-        logoutHandler :: Maybe (String) -> Session -> Handler (Maybe (Session))
-        logoutHandler authVal currentSession = liftIO $
-          (logoutHelper currentSession pool) =<< (loginCheck pool $ headerCheck authVal)
+    -- authorisation required: login
+    logoutHandler :: Maybe (String) -> Session -> Handler (Maybe (Session))
+    logoutHandler authVal currentSession = liftIO $
+      (logoutHelper currentSession pool) =<< (loginCheck pool $ headerCheck authVal)
 
 
 -- function that takes the server function and returns a WAI application 

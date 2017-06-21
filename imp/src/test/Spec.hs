@@ -1,1 +1,1 @@
-plusOne x = x + 1
+{-# OPTIONS_GHC -F -pgmF hspec-discover #-}
