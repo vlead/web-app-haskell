@@ -1,0 +1,51 @@
+#+TITLE: Test Suite For Login/Admin Authorisation
+
+
+* Language Extensions and Imports
+
+
+#+NAME: extns_and_imports
+#+BEGIN_SRC haskell
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TypeOperators #-}
+
+
+module AppSpec where
+
+
+import Data.Aeson
+import Data.Proxy 
+import Data.Text
+
+import Database.Persist.Sql
+
+import GHC.Generics
+
+import Control.Exception (throwIO, ErrorCall(..))
+import Control.Monad.Trans.Except
+
+import Network.HTTP.Client
+import Network.Wai.Handler.Warp
+ 
+import Servant.API
+import Servant.Client
+
+import App
+import Models
+import Api
+import Role
+
+import Test.Hspec
+import Test.Mockery.Directory
+import Test.QuickCheck
+
+#+END_SRC
+* Sample Data For Tests
+
+#+NAME: sample_data_for_tests
+#+BEGIN_SRC haskell
+
+
+
+#+END_SRC

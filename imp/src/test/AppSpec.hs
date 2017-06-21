@@ -69,6 +69,16 @@ adminOneSession = createSession 1 "admin@email.com" Admin
 -- user to add
 userOneData :: User
 userOneData = createUser "small-cat" "small@cat.com" NonAdmin
+
+
+-- session for user small-cat
+userOneSession :: Session
+userOneSession = createSession 2 "small@cat.com" NonAdmin
+
+
+-- another user to add
+userTwoData :: User
+userTwoData = createUser "large-cat" "large@cat.com" NonAdmin
  
 -- query function types
 testIndex :: ClientM Text
@@ -97,11 +107,26 @@ spec = do
 
     describe "Testing all routes for success" $ do
       it "Tests all routes for success" $ \ port -> do
-        (try port $ testLogin $ adminOneSession) `shouldReturn` (sessionResponse 1)
+        (try port $ testLogin adminOneSession) `shouldReturn` (sessionResponse 1)
         (try port $ testAddUser (Just "1") userOneData) `shouldReturn` (userResponse 2)
         (try port $ testShowUsers (Just "1")) `shouldReturn` [adminOneData, userOneData]
         (try port $ testDeleteUser (Just "1") (UniqueUserData "small@cat.com")) `shouldReturn` (Just userOneData)
         (try port $ testLogout (Just "1") adminOneSession) `shouldReturn` (Just adminOneSession)
+
+
+    describe "Testing for admin authorisation" $ do
+
+      it "Tests for admin auth on /addUser" $ \ port -> do
+        -- login Admin user "admin-user"
+        try port $ testLogin adminOneSession
+        -- add NonAdmin user using credentials of "admin-user"
+        try port $ testAddUser (Just "1") userOneData
+        -- login NonAdmin user "small-cat"
+        try port $ testLogin userOneSession
+        -- test-add NonAdmin user using credentials of "small-cat"
+        (try port $ testAddUser (Just "2") userTwoData) `shouldReturn` Nothing
+        
+        
 
         
         
