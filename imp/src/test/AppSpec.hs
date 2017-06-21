@@ -100,32 +100,116 @@ testIndex :<|> testLogin :<|> testShowUsers :<|> testAddUser :<|> testDeleteUser
 spec :: Spec
 spec = do
   around withApp $ do
-    
-    describe "Testing Index Route" $ do
+
+
+    describe "/index" $ do
       it "Returns value from Index page" $ \ port -> do
         (try port testIndex) `shouldReturn` pack("Welcome to User Directory")
 
-    describe "Testing all routes for success" $ do
-      it "Tests all routes for success" $ \ port -> do
+
+    describe "/login" $ do
+      
+      it "Operates successfully" $ \ port -> do
         (try port $ testLogin adminOneSession) `shouldReturn` (sessionResponse 1)
+
+      it "Attempts to login an user not in the system" $ \ port -> do
+        (try port $ testLogin userOneSession) `shouldReturn` Nothing
+        
+
+    describe "/addUser" $ do
+
+      it "Operates successfully" $ \ port -> do
+        -- login an Admin user who can add users
+        try port $ testLogin adminOneSession
+        -- adds an user
         (try port $ testAddUser (Just "1") userOneData) `shouldReturn` (userResponse 2)
-        (try port $ testShowUsers (Just "1")) `shouldReturn` [adminOneData, userOneData]
-        (try port $ testDeleteUser (Just "1") (UniqueUserData "small@cat.com")) `shouldReturn` (Just userOneData)
-        (try port $ testLogout (Just "1") adminOneSession) `shouldReturn` (Just adminOneSession)
 
-
-    describe "Testing for admin authorisation" $ do
-
-      it "Tests for admin auth on /addUser" $ \ port -> do
+      it "Only Admin user can add user" $ \ port -> do
         -- login Admin user "admin-user"
         try port $ testLogin adminOneSession
         -- add NonAdmin user using credentials of "admin-user"
-        try port $ testAddUser (Just "1") userOneData
-        -- login NonAdmin user "small-cat"
+        try port $ testAddUser (Just "1") userOneData 
+       -- login NonAdmin user "small-cat"
         try port $ testLogin userOneSession
-        -- test-add NonAdmin user using credentials of "small-cat"
+        -- test-add user using credentials of "small-cat"
         (try port $ testAddUser (Just "2") userTwoData) `shouldReturn` Nothing
+
+      it "Adding user when Session is not present in database" $ \ port -> do
+        (try port $ testAddUser (Just "1") userOneData) `shouldReturn` Nothing
+
+
+    describe "/deleteUser" $ do
+
+      it "Deletes user successfully" $ \ port -> do
+        -- to login "admin-user"
+        try port $ testLogin adminOneSession
+        -- to add an user
+        try port $ testAddUser (Just "1") userOneData
+        -- to delete same user using credentials of "admin-user"
+        (try port $ testDeleteUser (Just "1") (UniqueUserData "small@cat.com")) `shouldReturn` (Just userOneData)
+
+      it "Only Admin user can delete user" $ \ port -> do
+        -- login Admin user "admin-user"
+        try port $ testLogin adminOneSession
+        -- add NonAdmin user using credentials of "admin-user"
+        try port $ testAddUser (Just "1") userOneData 
+       -- login NonAdmin user "small-cat"
+        try port $ testLogin userOneSession
+        -- test-delete user using credentials of "small-cat"
+        (try port $ testDeleteUser (Just "2") (UniqueUserData "admin@email.com")) `shouldReturn` Nothing
+
+      it "Cannot delete oneself" $ \ port -> do
+        -- login Admin user "admin-user"
+        try port $ testLogin adminOneSession
+        -- Admin user attempts to delete self
+        (try port $ testDeleteUser (Just "1") (UniqueUserData "admin@email.com")) `shouldReturn` Nothing
+
+      it "Delete when Session not present in database" $ \ port -> do
+        -- login Admin user "admin-user"
+        try port $ testLogin adminOneSession
+        -- add user to database using credentials of "admin-user"
+        try port $ testAddUser (Just "1") userOneData
+        -- test delete user using credentials of non-logged-in user
+        (try port $ testDeleteUser (Just "3") (UniqueUserData "admin@email.com")) `shouldReturn` Nothing
+
+
+    describe "/showUsers" $ do
+
+      it "Shows list of three users successfully" $ \ port -> do
+        -- login Admin user "admin-user"
+        try port $ testLogin adminOneSession
+        -- add user "small-cat"
+        try port $ testAddUser (Just "1") userOneData
+        -- add user "large-cat"
+        try port $ testAddUser (Just "1") userTwoData
+        -- test-show all users using credentials of "admin-user"
+        (try port $ testShowUsers (Just "1")) `shouldReturn` [adminOneData, userOneData, userTwoData]
+
+      it "Cannot access list of users when session not in database" $ \ port -> do
+        (try port $ testShowUsers (Just "1")) `shouldReturn` []
         
+
+    describe "/logout" $ do
+
+      it "Logs out user successfully" $ \ port -> do
+        -- to log in user "admin-user"
+        try port $ testLogin adminOneSession
+        -- test-log out user "admin-user" using own credentials
+        (try port $ testLogout (Just "1") adminOneSession) `shouldReturn` (Just adminOneSession)
+
+      it "Cannot log out when session not in database" $ \ port -> do
+        -- test-log out random user not logged-in
+        (try port $ testLogout (Just "1") adminOneSession) `shouldReturn` Nothing
+
+      it "Cannot log out non-self user" $ \ port -> do
+        -- log in Admin user "admin-user"
+        try port $ testLogin adminOneSession
+        -- add user "small-cat"
+        try port $ testAddUser (Just "1") userOneData
+        -- log in user "small-cat"
+        try port $ testLogin userOneSession
+        -- log out "admin-user" using credentials of "small-cat"
+        (try port $ testLogout (Just "2") adminOneSession) `shouldReturn` Nothing
         
 
         

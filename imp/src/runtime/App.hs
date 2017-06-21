@@ -32,6 +32,11 @@ import           Role
 import           Authentication 
 
 
+-- to extract email from session
+sessionToEmail :: Session -> String
+sessionToEmail (Session sessionUserId sessionUserEmail sessionUserRoles) = sessionUserEmail
+
+
 toTextDatatype :: UniqueUserData -> Text
 toTextDatatype (UniqueUserData userData) = pack(userData)
 
@@ -108,9 +113,9 @@ deleteUserHelper userToDel pool authVal = flip runSqlPersistMPool pool $ case au
     deletedUser <- selectFirst [UserEmail ==. unpack(userToDel)] []
     case deletedUser of
       Nothing -> return Nothing
-      Just _ -> do 
-                 userIfDeleted <- deleteWhere [UserEmail ==. unpack(userToDel)]
-                 return $ entityVal <$> deletedUser
+      Just _ -> do
+        userIfDeleted <- deleteWhere [UserEmail ==. unpack(userToDel)]
+        return $ entityVal <$> deletedUser
 
 
 -- helper function for loginHandler
@@ -176,18 +181,19 @@ server pool =
 
     -- authorisation required: admin login
     addUserHandler :: Maybe (String) -> User -> Handler (Maybe (ResponseUserId))
-    addUserHandler authVal newUser = liftIO $
-       (addUserHelper newUser pool) =<< (adminAuthCheck pool $ headerCheck authVal)
-
+    addUserHandler authVal newUser = liftIO $ (addUserHelper newUser pool) =<< (adminAuthCheck pool $ headerCheck authVal)
+        
+        
     -- authorisation required: admin login
     deleteUserHandler :: Maybe (String) -> UniqueUserData -> Handler (Maybe (User))
     deleteUserHandler authVal userToDel = liftIO $
-      (deleteUserHelper (toTextDatatype userToDel) pool) =<< (adminAuthCheck pool $ headerCheck authVal)
+      (deleteUserHelper (toTextDatatype userToDel) pool)
+         =<< (isNotAdminSelfCheck pool (toTextDatatype userToDel) $ headerCheck authVal)
 
     -- authorisation required: login
     logoutHandler :: Maybe (String) -> Session -> Handler (Maybe (Session))
     logoutHandler authVal currentSession = liftIO $
-      (logoutHelper currentSession pool) =<< (loginCheck pool $ headerCheck authVal)
+      (logoutHelper currentSession pool) =<< (isSelfCheck pool (sessionToEmail currentSession) $ headerCheck authVal)
 
 
 -- function that takes the server function and returns a WAI application 

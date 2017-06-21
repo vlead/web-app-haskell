@@ -128,6 +128,30 @@ adminAuthCheck pool authSessionId = flip runSqlPersistMPool pool $ do
                         Admin    -> return True
 
 
+-- to check if user passed to the function is logged-in admin and self
+isSelfCheck :: ConnectionPool -> String -> String -> IO Bool
+isSelfCheck pool userData authSessionId = flip runSqlPersistMPool pool $ do
+  roleOfLoggedInUser <- get $ toSessionId authSessionId
+  case roleOfLoggedInUser of
+    Nothing -> return False
+    Just roleValue -> if ((sessionUserEmail roleValue) == userData)
+                        then return True
+                        else return False
+
+
+-- to check if user passed to the function is logged-in admin and not self
+isNotAdminSelfCheck :: ConnectionPool -> Text -> String -> IO Bool
+isNotAdminSelfCheck pool userData authSessionId = flip runSqlPersistMPool pool $ do
+  roleOfLoggedInUser <- get $ toSessionId authSessionId
+  case roleOfLoggedInUser of
+    Nothing -> return False
+    Just roleValue -> case (sessionUserRoles roleValue) of
+                        NonAdmin -> return False
+                        Admin -> if ((sessionUserEmail roleValue) == unpack(userData))
+                                   then return False
+                                   else return True
+
+
 #+END_SRC
 * Tangling
 
