@@ -242,33 +242,25 @@ data ResponseSessionId = ResponseSessionId {
 #+NAME: nonsecure_routes
 #+BEGIN_SRC haskell
 type NonSecureRoutes = "index" :> Get '[PlainText] Text
-                     :<|> "login" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Key (Session)))
+          :<|> "login" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (ResponseSessionId))
 #+END_SRC
 ** Routes requiring authentication
 
 #+NAME: secure_routes
 #+BEGIN_SRC haskell
  
-type SecureRoutes = Header "Cookie" String
-                 (
-                  "showUsers" :> Get '[JSON] [User]
-             :<|> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (Key User))
-             :<|> "deleteUser" :> ReqBody '[JSON] UniqueUserData :> Post '[JSON] (Maybe (User))
-             :<|> "logout" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Session))
-                 )
+type SecureRoutes = Header "Cookie" String :> "showUsers" :> Get '[JSON] [User]
+          :<|> Header "Cookie" String :> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (ResponseUserId))
+          :<|> Header "Cookie" String :> "deleteUser" :> ReqBody '[JSON] UniqueUserData :> Post '[JSON] (Maybe (User))
+          :<|> Header "Cookie" String :> "logout" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Session))
              
 #+END_SRC
 ** Combined API
 
 #+NAME: combined_api
 #+BEGIN_SRC haskell
-type UserAPI = "index" :> Get '[PlainText] Text
-          :<|> "login" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (ResponseSessionId))
-          :<|> Header "Cookie" String :> "showUsers" :> Get '[JSON] [User]
-          :<|> Header "Cookie" String :> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (ResponseUserId))
-          :<|> Header "Cookie" String :> "deleteUser" :> ReqBody '[JSON] UniqueUserData :> Post '[JSON] (Maybe (User))
-          :<|> Header "Cookie" String :> "logout" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Session))
-                 
+type UserAPI = NonSecureRoutes
+          :<|> SecureRoutes  
 
 #+END_SRC
 
@@ -279,5 +271,7 @@ type UserAPI = "index" :> Get '[PlainText] Text
 <<unique_user_data>>
 <<response_user_id>>
 <<response_session_id>>
+<<nonsecure_routes>>
+<<secure_routes>>
 <<combined_api>>
 #+END_SRC

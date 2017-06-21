@@ -69,9 +69,13 @@ data ResponseSessionId = ResponseSessionId {
                                      } deriving (Generic, Eq, Read, Show)
 
 
-type UserAPI = "index" :> Get '[PlainText] Text
+type NonSecureRoutes = "index" :> Get '[PlainText] Text
           :<|> "login" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (ResponseSessionId))
-          :<|> Header "Cookie" String :> "showUsers" :> Get '[JSON] [User]
+ 
+type SecureRoutes = Header "Cookie" String :> "showUsers" :> Get '[JSON] [User]
           :<|> Header "Cookie" String :> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (ResponseUserId))
           :<|> Header "Cookie" String :> "deleteUser" :> ReqBody '[JSON] UniqueUserData :> Post '[JSON] (Maybe (User))
           :<|> Header "Cookie" String :> "logout" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Session))
+             
+type UserAPI = NonSecureRoutes
+          :<|> SecureRoutes

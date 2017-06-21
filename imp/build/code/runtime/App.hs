@@ -159,12 +159,12 @@ assassinateSessions pool = flip runSqlPersistMPool pool $
   
 server :: ConnectionPool -> Server UserAPI
 server pool =
-            indexHandler 
-       :<|> loginHandler
-       :<|> showUsersHandler
+            (indexHandler 
+       :<|> loginHandler)
+       :<|> (showUsersHandler
        :<|> addUserHandler
        :<|> deleteUserHandler
-       :<|> logoutHandler
+       :<|> logoutHandler)
 
   where
 
