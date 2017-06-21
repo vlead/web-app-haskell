@@ -1,0 +1,219 @@
+#+TITLE: Notes
+
+
+* Smaller Issues and Problems
+
+** Odd symbols
+   - <$> is the infix symbol for fmap
+   
+** Figuring out the correct monad
+
+   - Eg: Database actions are IO actions, and will therefore return a value of
+     IO (). This is not directly inferrable from the type signature of the
+     function itself.
+    
+** Monad Transformations
+
+   - In general
+* Differences in data model
+
+** Two-layered data model
+
+*** The "pure" component of the code- i.e: the database API and the REST API
+
+    - Data model: each entity is a type with certain properties
+    - Each type has a behaviour, as encoded by the typeclasses it's a member of
+    - Multiple layers of types- 
+       + Instruction transfer layer
+       + Program layer (types manipulated by functions)
+       + Database-storage layer
+    - Coercion between layers
+       + Instr-to-Program : either defined coercion functions, or by
+         overlapping them
+       + Program-to-database interaction : overlap
+       + Database interaction-to-database storage layer : coercion done by the
+         library 
+    
+* Advantages
+
+** Concise code
+
+   - Very precise, concise code. (Note: vague description??? elaborate???)
+** Type system 
+
+   - Typechecking, and no-side-effects ensures that the data being passed
+     around in the program satisfies requirement predicates and some
+     unchecked-for data will not break program or invariants at runtime
+   - In general- formalising invariants "internally" via the type system (for eg: see how
+     Role is implemented, how User is implemented), instead of formalising
+     invariants "Externally" (via type-checking utils)
+   - This removes the need to write a lot of predicate-checking code. Also
+     makes code easier to maintain- as any invariant-breaking changes are
+     quickly caught at compile/build time
+** Errors get sorted out at compile-time
+** Very modular 
+* Issues
+
+** Bad/hard-to-understand error messages
+
+   - Particularly w.r.t types and typechecking - reproduces the entire
+     type-chain (Even worse when you're using advanced features of the type
+     system such as type families)
+** Type variables - ambiguity, needs to be specified
+
+   - w.r.t that error message received when trying to use exported type variable 
+** Scoping - hard to understand
+
+   - Eg: type variables are locally scoped
+** Template Haskell
+
+   - Type system requires writing a lot of "monotonous, error-prone
+     boilerplate code". Template haskell a solution to that
+   - But TH is slow to compile
+   - In general, defining complex types, or building a robust self-defined type
+     system (as done in code) is tedious
+
+* Tentative Metrics Chosen For Comparision
+
+** Lines of code (Conciseness)
+   
+   - Possible confounding variable - Template Haskell???
+  
+** Runtime for similar operations
+
+   - Predicted- haskell will run slower, based on previous studies
+** Compile/Build Time
+** Tests To Ensure Invariants vs. Number of Tests Obviated By Type System
+* Meeting With Project Mentor - 15/6/17
+
+** Description of work 
+
+   - Implemented the bulk of the webapp. There are a few routes I haven't
+     implemented yet, but due to the modularity of Haskell, implementing them
+     should be trivial.
+   - Started a rough set of "notes" on this project, here.
+   - Working on implementing a test suite to test requirements.
+   
+** Major Issues
+
+   - Parameters noted for comparision are very vague and subjective- eg:
+     "conciseness", "less error-prone", etc. 
+   - Presentation tomorrow : suggestions for how to present work done so far?
+    
+** Questions
+
+  - Is it accurate to define the system as a "pure" component (no state change)
+    (ie: the REST API layer and the database API layer)
+    and an "impure" component (user interface, and database)???
+  - Pointing out the differences between type-typeclass definition of entities
+    and object-classes definition of entities: is it superfluous???
+  - Can you define a monad as something that takes a portion of the "state"
+    component (ie: "environment" variable), and returns a new environment
+    variable? Or, like, a type that "wraps" this action???
+  - Suggestions on what to present tomorrow??? (possible: series of test
+    cases??? basically saying, "These test cases run")
+  - Answer to question asked at previous presentation: why haskell? What's the
+    benefit of learning haskell/writing a webapp in haskell? (note: could
+    present "advantages" section, but it's very vague and
+    non-quantitative.)
+
+- papers on comparative study???
+** Minutes of Meeting
+
+
+>>- talk to raghu reddy
+- type system -> monads
+
+ 
+
+software metrics
+- structure??
+- modular???
+- teachability??
+
+- linguistics papers??? ICFP??? 
+- agenda of the next meeting???
+- preparing reading list???
+get back to sir!!!
+
+- requirements?? how to write!!!
+- NLP to reqs? logic??
+- syntax-directed editors???
+- text summarisation: vasudev varma- search and info ext???
+
+* Meeting With Project Mentor - 19/6/17
+
+** Issues to Raise
+
+   1) Would like to work on this project- natural language processing
+      techniques in Haskell- in parallel.
+   2) Read through necessary papers on weekend. Made a reading list.
+   3) Reading list diverges in two directions: material on dependency parsing
+      in functional languages (Haskell), and on computational semantics in
+      Haskell.
+   4) As for computational semantics - they use a technique called Montague
+      Semantics. Relies on treating natural language in the same way one treats
+      formal language. 
+   5) Request for material on modern approaches to computational semantics,
+      and/or applications where montague's techniques are used.
+    
+** Reading List
+
+*** Dependency Parsing and Haskell
+
+    - A Fundamental Algorithm Of Dependency Parsing
+    - Dependency Parsing chapter of Jurafsky & Martin
+    - Dependency Grammars as Haskell Programs
+
+*** Computational Semantics and Haskell
+
+    - The book
+    - More reading material requested???
+
+** Notes About The Linguistics Paper
+
+   - Montague grammar : any work on applying Montague-semantics-techniques to Indian languages? Why not
+     ask the linguistics profs?
+   - So... is the problem dependency parsing, or computational semantics? 
+   
+** More reading required 
+
+   - I would at least like to get a basic idea of Montague Semantics, before
+     the next meeting
+  
+** Reading List
+
+   - Dependency Grammars as Haskell Programs
+   - Computational Semantics
+   - Some reading on modern approaches to Computational Semantics, although I
+     can't recommend anything. Ask the linguistics profs?
+* To-Do :
+
+  - Present the Dependency Grammars Haskell paper to Project Mentor
+  - Finish test suite and start writing up comparative study
+  - Look for LTRC student who's working on same problem???
+  - Email Prof. Soma for (a) More material on computational semantics, and (b)
+    This dependency grammar stuff. Try to arrange a meeting with her, if possible?
+* Related Literature
+
+- Press On - HCI
+  
+** Comparative study on programming languages
+
+   - Qualitative
+   - Compared based on metrics like secure programming practices, support of
+     different paradigms, and of interest: *web application development*
+   - Does not include Python. Very short section on web applications in
+     general. Qualitative- does not mention what kind of data it uses to compare.
+
+** A Comparative Study Of Seven Programming Languages
+
+   - By Lutz Prechelt
+   - Does not mention Haskell
+   - Methodology is very similar to what we want to do, though. (Even though
+     metrics chosen and problem chosen are different)
+** Software Measurement for Functional Programming
+
+   - Much more in-depth
+   - To read???
+     
