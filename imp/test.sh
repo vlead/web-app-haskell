@@ -1,7 +1,10 @@
 #!/bin/bash
 
 
-# basic test suite for web-app-haskell
+# to setup and build web-app-haskell
+# and to run test suite
 
-
-# tests for user - uniqueness of User Email
+stack setup
+stack build
+rm sqlite.db
+stack test

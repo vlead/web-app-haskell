@@ -194,9 +194,9 @@ instance FromJSON Session where
             <*> v .: "roles"
 
 instance ToJSON Session where
-  toJSON (Session sessionUserId sessionEmail sessionRoles) =
-    object ["userId" .= sessionUserId
-          ,  "email"  .= sessionEmail
+  toJSON (Session sessionMappingToUser sessionEmail sessionRoles) =
+    object ["userId" .= sessionMappingToUser
+          , "email"  .= sessionEmail
           , "roles"  .= sessionRoles]
 
 

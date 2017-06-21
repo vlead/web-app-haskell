@@ -96,7 +96,7 @@ User
   UniqueEmail email
   deriving Eq Read Show
 Session
-  mappingToUser UserId
+  userMappingToSession UserId
   userEmail String
   userRoles Role
   UniqueSessionDetails userEmail userRoles

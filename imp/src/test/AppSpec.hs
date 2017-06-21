@@ -55,6 +55,12 @@ sessionResponse x = Just $ ResponseSessionId (toSqlKey $ fromInteger x)
 userResponse :: Integer -> Maybe ResponseUserId
 userResponse x = Just $ ResponseUserId (toSqlKey $ fromInteger x)
 
+
+-- data for user admin-user
+adminOneData :: User
+adminOneData = createUser "admin-user" "admin@email.com" Admin
+
+
 -- session for user admin-user
 adminOneSession :: Session
 adminOneSession = createSession 1 "admin@email.com" Admin
@@ -85,21 +91,19 @@ spec :: Spec
 spec = do
   around withApp $ do
     
-    describe "/index" $ do
+    describe "Testing Index Route" $ do
       it "Returns value from Index page" $ \ port -> do
         (try port testIndex) `shouldReturn` pack("Welcome to User Directory")
 
-    describe "/login" $ do
-      it "Successfully logs in initial admin user" $ \ port -> do
+    describe "Testing all routes for success" $ do
+      it "Tests all routes for success" $ \ port -> do
         (try port $ testLogin $ adminOneSession) `shouldReturn` (sessionResponse 1)
-
-    describe "/addUser" $ do
-      it "Successfully adds an user" $ \ port -> do
         (try port $ testAddUser (Just "1") userOneData) `shouldReturn` (userResponse 2)
+        (try port $ testShowUsers (Just "1")) `shouldReturn` [adminOneData, userOneData]
+        (try port $ testDeleteUser (Just "1") (UniqueUserData "small@cat.com")) `shouldReturn` (Just userOneData)
+        (try port $ testLogout (Just "1") adminOneSession) `shouldReturn` (Just adminOneSession)
+
         
-    describe "/logout" $ do
-      it "Successfully logs out logged-in user" $ \ port -> do
-        (try port $ testLogout (Just "1") adminOneSession) `shouldReturn` Just adminOneSession
         
 
 withApp :: (Int -> IO a) -> IO a
