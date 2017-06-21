@@ -1,0 +1,70 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TypeOperators #-}
+
+
+module AppSpec where
+
+import Test.Hspec
+import Test.QuickCheck
+
+
+import Data.Aeson
+import Data.Proxy
+import Data.Text
+import GHC.Generics
+import Network.HTTP.Client (newManager, defaultManagerSettings)
+import Servant.API
+import Servant.Client
+
+import App
+import Models
+import Api
+import Role
+
+ 
+-- query function types
+testIndex :: ClientM Text
+testLogin :: Session -> ClientM (Maybe (ResponseSessionId))
+testShowUsers :: Maybe (String) -> ClientM [User]
+testAddUser :: Maybe (String) -> User -> ClientM (Maybe (ResponseUserId))
+testDeleteUser :: Maybe (String) -> UniqueUserData -> ClientM (Maybe (User))
+testLogout :: Maybe (String) -> Session -> ClientM (Maybe (Session))
+
+
+-- a proxy to our API
+userAPI :: Proxy UserAPI
+userAPI = Proxy
+
+
+-- code that returns the client functions for our API
+testIndex :<|> testLogin :<|> testShowUsers :<|> testAddUser :<|> testDeleteUser :<|> testLogout = client userAPI 
+--(BaseUrl Http "localhost" 8000)
+
+main :: IO ()
+main = hspec spec
+
+initialLoginInfo :: String
+initialLoginInfo = '{"name":"admin-user","email":"admin@email.com","roles":{"role":"Admin"}}'
+
+spec :: Spec
+spec = do
+  around withApp $ do
+    describe "/user/login" $ do
+      it "Returns a sessionId for a logged-in user" $ \ port -> do
+      try port (userLogin initialLoginInfo) `shouldReturn` 1
+
+withApp :: (Int -> IO a) -> IO a
+withApp action =
+  inTempDirectory $ do
+    app <- mkApp "sqlite.db"
+    testWithApplication (return app) action
+
+try :: Int -> (Manager -> BaseUrl -> ClientM a) -> IO a
+try port action = do
+  manager <- newManager defaultManagerSettings
+  let baseUrl = BaseUrl Http "localhost" port ""
+  result <- runExceptT $ action manager baseUrl
+  case result of
+    Left err -> throwIO $ ErrorCall $ show err
+    Right a -> return a
