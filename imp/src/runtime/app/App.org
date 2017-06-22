@@ -1,0 +1,268 @@
+#+TITLE: App
+
+
+* Introduction
+
+Controllers for handling the following routes :
+
+** Routes not requiring authentication
+
+*** index
+
+   - URL :: /index
+
+   - Content Type :: text/plain;charset=utf-8
+
+   - Data Params :: None
+
+   - Success Response ::
+     + "Welcome to User Directory"
+
+*** login
+
+
+   - URL :: /login
+
+   - Content Type :: application/json
+
+   - Data Params :: 
+       {
+         "email" : <user-email>,
+         "roles" :
+           {
+             "role" : <user-role>
+           }
+       }
+
+   - Success Response ::
+     + <session ID>
+
+** Routes requiring login authentication
+
+*** showUser
+
+
+  - URL :: /showUsers
+  - Method :: GET
+
+  - URL Params ::  None
+       
+  - Success Response ::
+   
+    + Content ::
+      #+BEGIN_EXAMPLE
+  [
+	{
+        email: "abc@xyz.com",
+        roles:
+            role: "NonAdmin"
+        name: "Abc Def"
+    }
+  ]  
+      #+END_EXAMPLE
+
+*** logout
+** Routes requiring admin authentication
+*** addUser
+
+   - URL :: /addUser
+
+   - Method :: POST
+
+   - Data Params ::
+     {
+      'name': '<value>',
+      'email': '<value>',
+     }
+
+   - Success Response ::
+     + <userId>
+
+*** deleteUser
+
+   - URL :: /deleteUser
+
+   - Method :: POST
+
+   - Data Params ::
+     {
+       "data" : <user-email>
+     }
+
+   - Success Response ::
+        
+        + Content ::
+          
+          #+BEGIN_EXAMPLE
+{
+    "email" : "smallcat@email.com"
+    "roles" :
+        {
+            "role" : NonAdmin
+        }
+    "name" : "Small Cat"
+}
+          #+END_EXAMPLE
+* Language Extensions and Imports
+  
+#+NAME: extns_and_imports
+#+BEGIN_SRC haskell
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE TypeOperators     #-}
+
+module App where
+
+import           Data.Aeson
+import           Data.Text
+import           Control.Monad.IO.Class
+import           Control.Monad.Logger (runStderrLoggingT)
+
+import           Data.String.Conversions
+import qualified Data.ByteString.Lazy.Char8 as B           
+
+import           Database.Persist
+import           Database.Persist.Sql
+import           Database.Persist.Sqlite
+
+import           Network.Wai
+import           Network.Wai.Handler.Warp as Warp
+
+import           Servant
+
+import           Data.Text
+
+import           Api
+import           Models
+import           Role
+import           Authentication
+import           Controllers 
+
+#+END_SRC
+
+* Server
+
+#+NAME: server
+#+BEGIN_SRC haskell
+  
+server :: ConnectionPool -> Server UserAPI
+server pool =
+            (indexHandler 
+       :<|> loginHandler)
+       :<|> (logoutHandler)
+       :<|> (showUsersHandler
+       :<|> addUserHandler
+       :<|> deleteUserHandler)
+
+       where
+
+         
+         indexHandler :: Handler (Text)
+         indexHandler = return "Welcome to User Directory"
+
+
+         loginHandler :: Session -> Handler (Maybe (ResponseSessionId))
+         loginHandler newSession = liftIO $ loginHelper newSession pool
+
+
+         -- authorisation required: login
+         showUsersHandler :: Maybe (String) -> Handler ([User])
+         showUsersHandler authVal = liftIO $
+           (showAllUsersHelper pool) =<< (loginCheck pool $ headerCheck authVal)
+
+
+         -- authorisation required: admin login
+         addUserHandler :: Maybe (String) -> User -> Handler (Maybe (ResponseUserId))
+         addUserHandler authVal newUser = liftIO $ (addUserHelper newUser pool) =<< (adminAuthCheck pool $ headerCheck authVal)
+        
+        
+         -- authorisation required: admin login
+         deleteUserHandler :: Maybe (String) -> UniqueUserData -> Handler (Maybe (User))
+         deleteUserHandler authVal userToDel = liftIO $
+           (deleteUserHelper (toTextDatatype userToDel) pool)
+             =<< (isNotAdminSelfCheck pool (toTextDatatype userToDel) $ headerCheck authVal)
+
+
+         -- authorisation required: login
+         logoutHandler :: Maybe (String) -> Session -> Handler (Maybe (Session))
+         logoutHandler authVal currentSession = liftIO $
+           (logoutHelper currentSession pool)
+             =<< (isSelfCheck pool (sessionToEmail currentSession) $ headerCheck authVal)
+
+
+
+
+-- function that takes the server function and returns a WAI application 
+app :: ConnectionPool -> Application
+app pool = serve userAPI $ server pool
+           where
+             userAPI :: Proxy UserAPI
+             userAPI = Proxy
+
+-- to integrate Persist backend with API
+-- createSqlitePool creates a pool of database connections
+mkApp :: FilePath -> IO Application
+mkApp sqliteFile = do
+  pool <- runStderrLoggingT $ do
+    createSqlitePool (cs sqliteFile) 5
+
+  runSqlPool (runMigration migrateAll) pool
+  adminUserCheck pool
+  assassinateSessions pool
+  return $ app pool
+
+
+-- to run the SQL database
+run :: FilePath -> IO ()
+run sqliteFile = 
+  Warp.run 8000 =<< mkApp sqliteFile
+
+#+END_SRC
+      
+* Initialisation Functions
+** Admin User Invariant
+
+Admin user invariants include :
+
+  - The system must have a single user with =roles = Admin=.
+  - The system cannot have less than one user.
+    
+#+NAME: admin_user_invariant
+#+BEGIN_SRC haskell
+
+-- | To check if admin user exists
+adminUserCheck :: ConnectionPool -> IO(String)
+adminUserCheck pool = flip runSqlPersistMPool pool $ do
+  adminUser <- selectFirst [UserRoles ==. Admin] []
+  case adminUser of
+    Nothing -> do
+      adminUserId <- insert $ User "admin-user" "admin@email.com" $ Admin
+      return "Admin User Added"
+    Just _ -> return "Admin User Exists"
+    
+
+#+END_SRC
+** Kill Sessions At Initialization 
+  
+To kill any sessions in the database when the webapp is booted.
+
+#+NAME: assassinate_sessions
+#+BEGIN_SRC haskell
+-- | To kill all sessions in database on initialisation
+assassinateSessions :: ConnectionPool -> IO ()
+assassinateSessions pool = flip runSqlPersistMPool pool $
+  deleteWhere ([] :: [Filter Session])
+#+END_SRC
+
+* Tangling
+
+#+NAME: tangling
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle App.hs
+<<extns_and_imports>>
+<<admin_user_invariant>>
+<<assassinate_sessions>>
+<<server>>
+#+END_SRC

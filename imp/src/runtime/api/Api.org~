@@ -178,63 +178,10 @@ import Data.Text
 import Database.Persist
 
 import Models
+import SecureApi
 import Servant.API
 #+END_SRC
 
-* Custom Datatypes For Instruction Input
-  
-Defining custom datatypes for the request body when required.
-
-** =UniqueUserData= : a unique value to identify the user by
-
-In this case, we take =UniqueUserData= to be =userEmail=.
-
-#+NAME: unique_user_data
-#+BEGIN_SRC haskell
-
-data UniqueUserData = UniqueUserData {
-                                       userData :: String
-                                     } deriving (Eq, Read, Show)
-
-
-instance ToJSON UniqueUserData where
-  toJSON (UniqueUserData userData) =
-    object ["data" .= userData]
-
-instance FromJSON UniqueUserData where
-  parseJSON = withObject "UniqueUserData" $ \ v ->
-    UniqueUserData <$> v .: "data"
-
-
-
-#+END_SRC
-
-* Custom Datatypes for Response
-
-Defining custom datatypes/instances for response.
-
-** ResponseUserId
-
-#+NAME: response_user_id
-#+BEGIN_SRC haskell
-data ResponseUserId = ResponseUserId {
-                                     userIdValue :: (Key (User))
-                                     } deriving (Generic, Eq, Read, Show)
-
-
-                      
-
-#+END_SRC
-** ResponseSessionId
-
-#+NAME: response_session_id
-#+BEGIN_SRC haskell
-data ResponseSessionId = ResponseSessionId {
-                                     sessionIdValue :: (Key (Session))
-                                     } deriving (Generic, Eq, Read, Show)
-
-
-#+END_SRC
 * API 
 
 ** Routes not requiring authentication
@@ -242,33 +189,25 @@ data ResponseSessionId = ResponseSessionId {
 #+NAME: nonsecure_routes
 #+BEGIN_SRC haskell
 type NonSecureRoutes = "index" :> Get '[PlainText] Text
-                     :<|> "login" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Key (Session)))
+          :<|> "login" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (ResponseSessionId))
 #+END_SRC
 ** Routes requiring authentication
 
 #+NAME: secure_routes
 #+BEGIN_SRC haskell
  
-type SecureRoutes = Header "Cookie" String
-                 (
-                  "showUsers" :> Get '[JSON] [User]
-             :<|> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (Key User))
-             :<|> "deleteUser" :> ReqBody '[JSON] UniqueUserData :> Post '[JSON] (Maybe (User))
-             :<|> "logout" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Session))
-                 )
+type SecureRoutes = Header "Cookie" String :> "showUsers" :> Get '[JSON] [User]
+          :<|> Header "Cookie" String :> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (ResponseUserId))
+          :<|> Header "Cookie" String :> "deleteUser" :> ReqBody '[JSON] UniqueUserData :> Post '[JSON] (Maybe (User))
+          :<|> Header "Cookie" String :> "logout" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Session))
              
 #+END_SRC
 ** Combined API
 
 #+NAME: combined_api
 #+BEGIN_SRC haskell
-type UserAPI = "index" :> Get '[PlainText] Text
-          :<|> "login" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (ResponseSessionId))
-          :<|> Header "Cookie" String :> "showUsers" :> Get '[JSON] [User]
-          :<|> Header "Cookie" String :> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (ResponseUserId))
-          :<|> Header "Cookie" String :> "deleteUser" :> ReqBody '[JSON] UniqueUserData :> Post '[JSON] (Maybe (User))
-          :<|> Header "Cookie" String :> "logout" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Session))
-                 
+type UserAPI = NonSecureRoutes
+          :<|> SecureRoutes  
 
 #+END_SRC
 
@@ -276,8 +215,6 @@ type UserAPI = "index" :> Get '[PlainText] Text
 
 #+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
 <<extns_and_imports>>
-<<unique_user_data>>
-<<response_user_id>>
-<<response_session_id>>
+<<nonsecure_routes>>
 <<combined_api>>
 #+END_SRC

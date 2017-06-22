@@ -14,13 +14,21 @@ extra-source-files:  README.org
 cabal-version:       >=1.10
 
 executable web-app-haskell
-  hs-source-dirs:      build/code/runtime
+  hs-source-dirs:      build/code/runtime/app
+                     , build/code/runtime/api
+                     , build/code/runtime/models
+                     , build/code/runtime/controllers
+                     , build/code/runtime/authentication
   main-is:             Main.hs
   other-modules:       Role,
+                       AdminApi,
+                       NonAdminApi,
+                       NonSecureApi,
                        Api,
                        App,
                        Models,
-                       Authentication 
+                       Authentication,
+                       Controllers 
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base >= 4.7 && < 5
                        -- custom dependencies
@@ -55,14 +63,22 @@ executable web-app-haskell
 test-suite web-app-haskell-test
   type:                exitcode-stdio-1.0
   hs-source-dirs:      build/code/test
-                     , build/code/runtime
+                     , build/code/runtime/app
+                     , build/code/runtime/api
+                     , build/code/runtime/models
+                     , build/code/runtime/controllers
+                     , build/code/runtime/authentication
   main-is:             Spec.hs
   other-modules:       AppSpec
                      , Api
+                     , NonSecureApi
+                     , NonAdminApi
+                     , AdminApi
                      , App
                      , Models
                      , Role
                      , Authentication
+                     , Controllers
   build-depends:       base >= 4.7 && < 5
                      , hspec
                      , QuickCheck
