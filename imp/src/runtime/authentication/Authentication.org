@@ -128,7 +128,7 @@ adminAuthCheck pool authSessionId = flip runSqlPersistMPool pool $ do
                         Admin    -> return True
 
 
--- to check if user passed to the function is logged-in admin and self
+-- to check if user passed to the function is logged-in self
 isSelfCheck :: ConnectionPool -> String -> String -> IO Bool
 isSelfCheck pool userData authSessionId = flip runSqlPersistMPool pool $ do
   roleOfLoggedInUser <- get $ toSessionId authSessionId

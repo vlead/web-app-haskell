@@ -71,27 +71,39 @@ server pool =
 
          -- authorisation required: login
          showUsersHandler :: Maybe (String) -> Handler ([User])
-         showUsersHandler authVal = liftIO $
-           (showAllUsersHelper pool) =<< (loginCheck pool $ headerCheck authVal)
+         showUsersHandler authVal = do
+           isLoggedIn <- liftIO (loginCheck pool $ headerCheck authVal)
+           case isLoggedIn of
+             True  -> liftIO $ (showAllUsersHelper pool True)
+             False -> throwError err403 {errBody = "User not logged in."}
 
 
          -- authorisation required: admin login
          addUserHandler :: Maybe (String) -> User -> Handler (Maybe (ResponseUserId))
-         addUserHandler authVal newUser = liftIO $ (addUserHelper newUser pool) =<< (adminAuthCheck pool $ headerCheck authVal)
+         addUserHandler authVal newUser = do
+           isAdmin <- liftIO (adminAuthCheck pool $ headerCheck authVal)
+           case isAdmin of
+             True  -> liftIO $ (addUserHelper newUser pool True)
+             False -> throwError err401 {errBody = "Permission Denied."} 
         
         
          -- authorisation required: admin login
          deleteUserHandler :: Maybe (String) -> UniqueUserData -> Handler (Maybe (User))
-         deleteUserHandler authVal userToDel = liftIO $
-           (deleteUserHelper (toTextDatatype userToDel) pool)
-             =<< (isNotAdminSelfCheck pool (toTextDatatype userToDel) $ headerCheck authVal)
+         deleteUserHandler authVal userToDel = do
+           isAdminAndNotSelf <- liftIO (isNotAdminSelfCheck pool (toTextDatatype userToDel) $ headerCheck authVal) 
+           case isAdminAndNotSelf of
+             True  -> liftIO (deleteUserHelper (toTextDatatype userToDel) pool True)
+             False -> throwError err401 {errBody = "Permission Denied."} 
 
 
          -- authorisation required: login
          logoutHandler :: Maybe (String) -> Session -> Handler (Maybe (Session))
-         logoutHandler authVal currentSession = liftIO $
-           (logoutHelper currentSession pool)
-             =<< (isSelfCheck pool (sessionToEmail currentSession) $ headerCheck authVal)
+         logoutHandler authVal currentSession = do
+           isLoggedInAndSelf <- liftIO (isSelfCheck pool (sessionToEmail currentSession) $ headerCheck authVal) 
+           case isLoggedInAndSelf of
+             True  -> liftIO (logoutHelper currentSession pool True)
+             False -> throwError err401 {errBody = "Permission Denied."} 
+             
 
 
 
