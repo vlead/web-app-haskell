@@ -95,7 +95,7 @@ userAPI = Data.Proxy.Proxy
 
 
 -- code that returns the client functions for our API
-(testIndex :<|> testLogin) :<|> (testShowUsers :<|> testAddUser :<|> testDeleteUser :<|> testLogout) = client userAPI 
+(testIndex :<|> testLogin) :<|> (testLogout) :<|> (testShowUsers :<|> testAddUser :<|> testDeleteUser) = client userAPI 
 
 spec :: Spec
 spec = do

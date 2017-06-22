@@ -250,10 +250,10 @@ server :: ConnectionPool -> Server UserAPI
 server pool =
             (indexHandler 
        :<|> loginHandler)
+       :<|> (logoutHandler)
        :<|> (showUsersHandler
        :<|> addUserHandler
-       :<|> deleteUserHandler
-       :<|> logoutHandler)
+       :<|> deleteUserHandler)
 
   where
 
