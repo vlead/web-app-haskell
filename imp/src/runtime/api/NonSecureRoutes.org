@@ -3,7 +3,9 @@
 
 * Introduction 
 
-Defining the portion of the Api that do not require login to access.
+Defining the portion of the Api that can be accessed without logging in to the
+system
+
 * Language Extensions and Imports 
 
 #+NAME: extns_and_imports
@@ -53,19 +55,89 @@ import Models
 
 import Servant.API
 #+END_SRC
-* API
+* REST
 
+** =/index=
+
+Returns index page and welcome message
+
+#+NAME: index
+#+BEGIN_SRC haskell
+
+type IndexApi = "index" :> Get '[PlainText] Text
+
+#+END_SRC
+
+** =/login=
+
+API to login to the application.
+   
+*** API Design
+
+  - URL :: /login
+  - Method :: POST
+              
+  - Request Data Params ::
+                   
+     #+BEGIN_EXAMPLE
+     {
+        "userId" : "<value>",
+        "email"  : "<value>",
+        "roles"  : {
+                    "role": "<value"
+                   }
+     }
+     #+END_EXAMPLE		   
+       
+  - Success Response ::
+    + Code: 200
+
+    + Content :: Cookie - Id of Current Session
+      #+BEGIN_EXAMPLE
+    
+         {
+         "SessionId": 1
+         }
+ 
+      #+END_EXAMPLE
+
+  - Error Response ::
+
+    + Code: 400 Bad Request
+
+    OR
+
+    + Code: 500
+
+
+  - Example ::
+    #+BEGIN_EXAMPLE
+    http://localhost:8000/login
+    #+END_EXAMPLE
+
+*** Implementation
+
+#+NAME: login
+#+BEGIN_SRC haskell
+
+type LoginApi = "login" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (ResponseSessionId))
+
+#+END_SRC
+
+* Combined 
+  
 #+NAME: non_secure_routes
 #+BEGIN_SRC haskell
 
-type NonSecureRoutes = "index" :> Get '[PlainText] Text
-                  :<|> "login" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (ResponseSessionId))
+type NonSecureRoutes = IndexApi :<|> LoginApi
 
 #+END_SRC
 * Tangling
 
 #+BEGIN_SRC haskell :eval no :noweb yes :tangle NonSecureApi.hs 
 <<extns_and_imports>>
+<<index>>
+<<login>>
 <<non_secure_routes>>
 
 #+END_SRC

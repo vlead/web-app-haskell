@@ -2,135 +2,12 @@
 
 
 * Introduction
+  
+Defines the routes used to interact with the system =User Directory=, and
+combines them into an API.
 
-Controllers for handling the following routes :
-
-** Routes not requiring authentication
-
-
-*** index
-
-   - URL :: /index
-
-   - Content Type :: None
-
-   - Data Params :: None
-
-   - Success Response ::
-        
-        + Response Code: 200
-        + Response type: text/plain;charset=utf-8
-        + Content:
-
-          #+BEGIN_EXAMPLE
-"Welcome to User Directory"
-          #+END_EXAMPLE
-
-   - Error Response ::
-
-        + Code: 405 Method Not Allowed
-
-*** login
-
-
-   - URL :: /login
-            
-   - Method :: POST
-
-   - Content Type :: application/json
-
-   - Data Params :: 
-       {
-         "email" : <user-email>,
-         "roles" :
-           {
-             "role" : <user-role>
-           }
-       }
-
-   - Success Response ::
-     + Code: 200
-     + Content: 
-
-       #+BEGIN_EXAMPLE
-
-    {
-        "SessionId" : <session-id>
-    }
-       #+END_EXAMPLE
-
-   - Error Response ::
-
-     + Code: 400 Bad Request
-     + Content: 
-       { errBody : "Malformed arguments"}
-
-** Routes requiring login authentication
-
-*** showUser
-
-
-  - URL :: /showUsers
-  - Method :: GET
-
-  - URL Params ::  None
-       
-  - Success Response ::
-   
-    + Content ::
-      #+BEGIN_EXAMPLE
-  [
-	{
-        email: "abc@xyz.com",
-        roles:
-            role: "NonAdmin"
-        name: "Abc Def"
-    }
-  ]  
-      #+END_EXAMPLE
-
-*** logout
-** Routes requiring admin authentication
-*** addUser
-
-   - URL :: /addUser
-
-   - Method :: POST
-
-   - Data Params ::
-     {
-      'name': '<value>',
-      'email': '<value>',
-     }
-
-   - Success Response ::
-     + <userId>
-
-*** deleteUser
-
-   - URL :: /deleteUser
-
-   - Method :: POST
-
-   - Data Params ::
-     {
-       "data" : <user-email>
-     }
-
-   - Success Response ::
-        
-        + Content ::
-          
-          #+BEGIN_EXAMPLE
-{
-    "email" : "smallcat@email.com"
-    "roles" :
-        {
-            "role" : NonAdmin
-        }
-    "name" : "Small Cat"
-}
-          #+END_EXAMPLE
+The behaviour of the API - ie: it's structure, request arguments and return
+values - is implemented using types and combinators. 
 
 * Language Extensions and Imports 
 
@@ -188,8 +65,13 @@ import Servant.API
 
 * API 
 
-** Combined API
-
+  - =NonSecureRoutes= defines the routes that do not require login
+    authorisation.
+  - =NonAdminRoutes= defines the routes that do not require =Admin=
+    authorisation.
+  - =AdminRoutes= defines the routes that require =Admin= authorisation
+  - =UserAPI= defines the main =API= structure. 
+ 
 #+NAME: combined_api
 #+BEGIN_SRC haskell
 type UserAPI = NonSecureRoutes

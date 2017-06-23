@@ -14,7 +14,7 @@ import Database.Persist.Sql
 
 import GHC.Generics
 
-import Control.Exception (throwIO, ErrorCall(..))
+import Control.Exception 
 import Control.Monad.Trans.Except
 
 import Network.HTTP.Client
@@ -22,6 +22,7 @@ import Network.Wai.Handler.Warp
  
 import Servant.API
 import Servant.Client
+import Servant.Server
 
 import App
 import Models
@@ -104,112 +105,112 @@ spec = do
 
     describe "/index" $ do
       it "Returns value from Index page" $ \ port -> do
-        (try port testIndex) `shouldReturn` pack("Welcome to User Directory")
+        (tryQuery port testIndex) `shouldReturn` pack("Welcome to User Directory")
 
 
     describe "/login" $ do
       
       it "Operates successfully" $ \ port -> do
-        (try port $ testLogin adminOneSession) `shouldReturn` (sessionResponse 1)
+        (tryQuery port $ testLogin adminOneSession) `shouldReturn` (sessionResponse 1)
 
       it "Attempts to login an user not in the system" $ \ port -> do
-        (try port $ testLogin userOneSession) `shouldReturn` Nothing
+        (tryQuery port $ testLogin userOneSession) `shouldReturn` Nothing
         
 
     describe "/addUser" $ do
 
       it "Operates successfully" $ \ port -> do
         -- login an Admin user who can add users
-        try port $ testLogin adminOneSession
+        tryQuery port $ testLogin adminOneSession
         -- adds an user
-        (try port $ testAddUser (Just "1") userOneData) `shouldReturn` (userResponse 2)
+        (tryQuery port $ testAddUser (Just "1") userOneData) `shouldReturn` (userResponse 2)
 
       it "Only Admin user can add user" $ \ port -> do
         -- login Admin user "admin-user"
-        try port $ testLogin adminOneSession
+        tryQuery port $ testLogin adminOneSession
         -- add NonAdmin user using credentials of "admin-user"
-        try port $ testAddUser (Just "1") userOneData 
+        tryQuery port $ testAddUser (Just "1") userOneData 
        -- login NonAdmin user "small-cat"
-        try port $ testLogin userOneSession
+        tryQuery port $ testLogin userOneSession
         -- test-add user using credentials of "small-cat"
-        (try port $ testAddUser (Just "2") userTwoData) `shouldReturn` Nothing
+        (tryQuery port $ testAddUser (Just "2") userTwoData) `shouldThrow` anyErrorCall
 
       it "Adding user when Session is not present in database" $ \ port -> do
-        (try port $ testAddUser (Just "1") userOneData) `shouldReturn` Nothing
+        (tryQuery port $ testAddUser (Just "1") userOneData) `shouldThrow` anyErrorCall
 
 
     describe "/deleteUser" $ do
 
       it "Deletes user successfully" $ \ port -> do
         -- to login "admin-user"
-        try port $ testLogin adminOneSession
+        tryQuery port $ testLogin adminOneSession
         -- to add an user
-        try port $ testAddUser (Just "1") userOneData
+        tryQuery port $ testAddUser (Just "1") userOneData
         -- to delete same user using credentials of "admin-user"
-        (try port $ testDeleteUser (Just "1") (UniqueUserData "small@cat.com")) `shouldReturn` (Just userOneData)
+        (tryQuery port $ testDeleteUser (Just "1") (UniqueUserData "small@cat.com")) `shouldReturn` (Just userOneData)
 
       it "Only Admin user can delete user" $ \ port -> do
         -- login Admin user "admin-user"
-        try port $ testLogin adminOneSession
+        tryQuery port $ testLogin adminOneSession
         -- add NonAdmin user using credentials of "admin-user"
-        try port $ testAddUser (Just "1") userOneData 
+        tryQuery port $ testAddUser (Just "1") userOneData 
        -- login NonAdmin user "small-cat"
-        try port $ testLogin userOneSession
+        tryQuery port $ testLogin userOneSession
         -- test-delete user using credentials of "small-cat"
-        (try port $ testDeleteUser (Just "2") (UniqueUserData "admin@email.com")) `shouldReturn` Nothing
+        (tryQuery port $ testDeleteUser (Just "2") (UniqueUserData "admin@email.com")) `shouldThrow` anyException
 
       it "Cannot delete oneself" $ \ port -> do
         -- login Admin user "admin-user"
-        try port $ testLogin adminOneSession
+        tryQuery port $ testLogin adminOneSession
         -- Admin user attempts to delete self
-        (try port $ testDeleteUser (Just "1") (UniqueUserData "admin@email.com")) `shouldReturn` Nothing
+        (tryQuery port $ testDeleteUser (Just "1") (UniqueUserData "admin@email.com")) `shouldThrow` anyException
 
       it "Delete when Session not present in database" $ \ port -> do
         -- login Admin user "admin-user"
-        try port $ testLogin adminOneSession
+        tryQuery port $ testLogin adminOneSession
         -- add user to database using credentials of "admin-user"
-        try port $ testAddUser (Just "1") userOneData
+        tryQuery port $ testAddUser (Just "1") userOneData
         -- test delete user using credentials of non-logged-in user
-        (try port $ testDeleteUser (Just "3") (UniqueUserData "admin@email.com")) `shouldReturn` Nothing
+        (tryQuery port $ testDeleteUser (Just "3") (UniqueUserData "admin@email.com")) `shouldThrow` anyException
 
 
     describe "/showUsers" $ do
 
       it "Shows list of three users successfully" $ \ port -> do
         -- login Admin user "admin-user"
-        try port $ testLogin adminOneSession
+        tryQuery port $ testLogin adminOneSession
         -- add user "small-cat"
-        try port $ testAddUser (Just "1") userOneData
+        tryQuery port $ testAddUser (Just "1") userOneData
         -- add user "large-cat"
-        try port $ testAddUser (Just "1") userTwoData
+        tryQuery port $ testAddUser (Just "1") userTwoData
         -- test-show all users using credentials of "admin-user"
-        (try port $ testShowUsers (Just "1")) `shouldReturn` [adminOneData, userOneData, userTwoData]
+        (tryQuery port $ testShowUsers (Just "1")) `shouldReturn` [adminOneData, userOneData, userTwoData]
 
       it "Cannot access list of users when session not in database" $ \ port -> do
-        (try port $ testShowUsers (Just "1")) `shouldReturn` []
+        (tryQuery port $ testShowUsers (Just "1")) `shouldThrow` anyException
         
 
     describe "/logout" $ do
 
       it "Logs out user successfully" $ \ port -> do
         -- to log in user "admin-user"
-        try port $ testLogin adminOneSession
+        tryQuery port $ testLogin adminOneSession
         -- test-log out user "admin-user" using own credentials
-        (try port $ testLogout (Just "1") adminOneSession) `shouldReturn` (Just adminOneSession)
+        (tryQuery port $ testLogout (Just "1") adminOneSession) `shouldReturn` (Just adminOneSession)
 
       it "Cannot log out when session not in database" $ \ port -> do
         -- test-log out random user not logged-in
-        (try port $ testLogout (Just "1") adminOneSession) `shouldReturn` Nothing
+        (tryQuery port $ testLogout (Just "1") adminOneSession) `shouldThrow` anyException
 
       it "Cannot log out non-self user" $ \ port -> do
         -- log in Admin user "admin-user"
-        try port $ testLogin adminOneSession
+        tryQuery port $ testLogin adminOneSession
         -- add user "small-cat"
-        try port $ testAddUser (Just "1") userOneData
+        tryQuery port $ testAddUser (Just "1") userOneData
         -- log in user "small-cat"
-        try port $ testLogin userOneSession
+        tryQuery port $ testLogin userOneSession
         -- log out "admin-user" using credentials of "small-cat"
-        (try port $ testLogout (Just "2") adminOneSession) `shouldReturn` Nothing
+        (tryQuery port $ testLogout (Just "2") adminOneSession) `shouldThrow` anyException
         
 
         
@@ -226,7 +227,7 @@ errorText :: Text
 errorText = pack("Error")
 
 
-try port query = do
+tryQuery port query = do
   manager <- newManager defaultManagerSettings
   res <- runClientM query (ClientEnv manager (BaseUrl Http "localhost" port ""))
   case res of

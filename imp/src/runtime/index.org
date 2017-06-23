@@ -1,0 +1,14 @@
+#+TITLE: Runtime of Application
+
+
+The =runtime= of the application is defined by:
+
+  - [[file:app/index.org][=app=]]
+
+  - [[file:api/index.org][=api=]]
+
+  - [[file:authentication/index.org][=authentication=]]
+
+  - [[file:models/index.org][=models=]]
+
+  - [[file:controllers/index.org][=controllers=]]

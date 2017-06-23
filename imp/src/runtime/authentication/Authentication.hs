@@ -31,12 +31,12 @@ import           Role
 -- All authentication-related values are prefixed with auth-
   
 
--- utility function to convert a string to an int
+-- | utility function to convert a string to an int
 toInt :: String -> Int
 toInt str = read str
 
 
--- utility function to convert String value to SessionId
+-- | utility function to convert String value to SessionId
 toSessionId :: String -> SessionId
 toSessionId val = toSqlKey $ fromIntegral $ toInt val
 
@@ -71,7 +71,7 @@ adminAuthCheck pool authSessionId = flip runSqlPersistMPool pool $ do
                         Admin    -> return True
 
 
--- to check if user passed to the function is logged-in admin and self
+-- | to check if user passed to the function is logged-in self
 isSelfCheck :: ConnectionPool -> String -> String -> IO Bool
 isSelfCheck pool userData authSessionId = flip runSqlPersistMPool pool $ do
   roleOfLoggedInUser <- get $ toSessionId authSessionId
@@ -82,7 +82,7 @@ isSelfCheck pool userData authSessionId = flip runSqlPersistMPool pool $ do
                         else return False
 
 
--- to check if user passed to the function is logged-in admin and not self
+-- | to check if user passed to the function is logged-in admin and not self
 isNotAdminSelfCheck :: ConnectionPool -> Text -> String -> IO Bool
 isNotAdminSelfCheck pool userData authSessionId = flip runSqlPersistMPool pool $ do
   roleOfLoggedInUser <- get $ toSessionId authSessionId

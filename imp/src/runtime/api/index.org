@@ -1,0 +1,8 @@
+#+TITLE: Integration Of Componenets For User Directory Application
+
+
+The =app= package holds two modules:
+
+  - [[file:App.org][App]]
+
+  - [[file:Main.org][Main]]

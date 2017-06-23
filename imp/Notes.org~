@@ -1,0 +1,17 @@
+#+TITLE: Notes 
+
+
+* Frameworks and Libraries Used
+
+Frameworks used are :
+
+  - ~Servant~ : a web framework that allows us to define APIs at the
+    type-level. It also acts as a wrapper over Haskell's low-level =WAI= (Web
+    Application Interface) library.
+  - ~Servant-Client~ : Used to derive client functions for the API routes.
+  - ~Yesod-Persistent~ : a type-safe multi-database API, used to interact with
+    the underlying ~sqlite~ database.
+  - ~Hspec~ : a test suite library for Haskell.
+* Database Actions
+
+Database actions are IO actions, and return a value of type =IO (Maybe a)=.

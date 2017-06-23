@@ -1,0 +1,6 @@
+#+TITLE: Runtime of Application
+
+
+The =runtime= of the application is defined by:
+
+  - [[file:app/index.org][=app=]]
