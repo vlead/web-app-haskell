@@ -1,0 +1,6 @@
+#+TITLE: Authentication Functions For User Directory Application
+
+
+The =authentication= package holds one module.
+
+  - [[file:Authentication.org][Authentication]]
