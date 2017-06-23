@@ -43,6 +43,13 @@ import Models
 
 import Servant.API
 
-type AdminRoutes = Header "Cookie" String :> "showUsers" :> Get '[JSON] [User]
-              :<|> Header "Cookie" String :> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (ResponseUserId))
-              :<|> Header "Cookie" String :> "deleteUser" :> ReqBody '[JSON] UniqueUserData :> Post '[JSON] (Maybe (User))
+type ShowUsersApi = Header "Cookie" String :> "showUsers" :> Get '[JSON] [User] 
+
+
+type AddUserApi = Header "Cookie" String :> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (ResponseUserId))
+
+
+type DeleteUserApi = Header "Cookie" String :> "deleteUser" :> ReqBody '[JSON] UniqueUserData :> Post '[JSON] (Maybe (User))
+
+
+type AdminRoutes = ShowUsersApi :<|> AddUserApi :<|> DeleteUserApi

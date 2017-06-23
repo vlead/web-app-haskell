@@ -43,5 +43,10 @@ import Models
 
 import Servant.API
 
-type NonSecureRoutes = "index" :> Get '[PlainText] Text
-                  :<|> "login" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (ResponseSessionId))
+type IndexApi = "index" :> Get '[PlainText] Text
+
+
+type LoginApi = "login" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (ResponseSessionId))
+
+
+type NonSecureRoutes = IndexApi :<|> LoginApi

@@ -3,15 +3,7 @@
 
 * Introduction
 
-The data model- that are stored in the database- are defined here. 
-
-We define here a single database that stores a value - User.
-** User
-
-   - id
-   - name
-   - email
-   - roles
+The datatypes used in the system are defined here.
 
 * Language Extensions and Imports
   
@@ -43,9 +35,7 @@ import           GHC.Generics
 #+END_SRC
 * Externally Defined Datatypes
 
-=Persistent= requires us to define custom datatypes in an external file (due to
-the way Template Haskell in the main =Models= module is parsed.) 
-
+Datatype =Role=, defined in an external file.
 ** Role
    
 #+NAME: external_types
@@ -85,6 +75,11 @@ derivePersistField "Role"
 
 #+END_SRC
 * Database Models
+
+These are the models for the types stored in the database.
+
+Each datatype corresponds to a table, and each field of a datatype corresponds
+to a column in the table.
 
 #+NAME: database_models
 #+BEGIN_SRC haskell
@@ -186,6 +181,7 @@ toTextDatatype (UniqueUserData userData) = pack(userData)
 #+END_SRC
 ** Jsonifying Datatypes
 
+Making types an instance of classes =ToJSON= and =FromJSON=.
 
 *** Jsonifying User Datatype
 

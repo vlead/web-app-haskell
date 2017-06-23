@@ -43,4 +43,7 @@ import Models
 
 import Servant.API
 
-type NonAdminRoutes = Header "Cookie" String :> "logout" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Session))
+type LogoutApi = Header "Cookie" String :> "logout" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Session)) 
+
+
+type NonAdminRoutes = LogoutApi

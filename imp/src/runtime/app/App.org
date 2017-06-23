@@ -2,107 +2,9 @@
 
 
 * Introduction
+  
+Controllers for handling the REST API routes.
 
-Controllers for handling the following routes :
-
-** Routes not requiring authentication
-
-*** index
-
-   - URL :: /index
-
-   - Content Type :: text/plain;charset=utf-8
-
-   - Data Params :: None
-
-   - Success Response ::
-     + "Welcome to User Directory"
-
-*** login
-
-
-   - URL :: /login
-
-   - Content Type :: application/json
-
-   - Data Params :: 
-       {
-         "email" : <user-email>,
-         "roles" :
-           {
-             "role" : <user-role>
-           }
-       }
-
-   - Success Response ::
-     + <session ID>
-
-** Routes requiring login authentication
-
-*** showUser
-
-
-  - URL :: /showUsers
-  - Method :: GET
-
-  - URL Params ::  None
-       
-  - Success Response ::
-   
-    + Content ::
-      #+BEGIN_EXAMPLE
-  [
-	{
-        email: "abc@xyz.com",
-        roles:
-            role: "NonAdmin"
-        name: "Abc Def"
-    }
-  ]  
-      #+END_EXAMPLE
-
-*** logout
-** Routes requiring admin authentication
-*** addUser
-
-   - URL :: /addUser
-
-   - Method :: POST
-
-   - Data Params ::
-     {
-      'name': '<value>',
-      'email': '<value>',
-     }
-
-   - Success Response ::
-     + <userId>
-
-*** deleteUser
-
-   - URL :: /deleteUser
-
-   - Method :: POST
-
-   - Data Params ::
-     {
-       "data" : <user-email>
-     }
-
-   - Success Response ::
-        
-        + Content ::
-          
-          #+BEGIN_EXAMPLE
-{
-    "email" : "smallcat@email.com"
-    "roles" :
-        {
-            "role" : NonAdmin
-        }
-    "name" : "Small Cat"
-}
-          #+END_EXAMPLE
 * Language Extensions and Imports
   
 #+NAME: extns_and_imports
@@ -145,6 +47,14 @@ import           Controllers
 
 * Server
 
+Function defining the server. It takes an argument of type =ConnectionPool= (a
+pool of connections to the underlying =sqlite= database) and returns a value of
+type =Server UserAPI=.
+
+All the controllers return a value wrapped in the =Handler= monad. This monad
+lets us return a successful result, or fail using an error of type
+=ServantErr=.
+ 
 #+NAME: server
 #+BEGIN_SRC haskell
   

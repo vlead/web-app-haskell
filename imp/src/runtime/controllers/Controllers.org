@@ -3,7 +3,9 @@
 
 * Introduction
 
-Defining the controllers to perform CRUD operations.
+Defining the controllers to perform CRUD operations on the data read from the
+underlying database.
+
 * Language Extensions and Imports
 
   

@@ -2,9 +2,27 @@
 
 An user directory web app written in Haskell.
 
-* To Run
+
+* Introduction
+
+This application is an implementation of a set of requirements for an =User
+Directory Web App=. The app stores a set of =Users= and their details, and
+allows us to perform CRUD operations.
+
+* Frameworks and Libraries Used
+
+Frameworks used are :
+
+  - ~Servant~ : a web framework that allows us to define APIs at the
+    type-level. It also acts as a wrapper over Haskell's low-level =WAI= (Web
+    Application Interface) library.
+  - ~Servant-Client~ : Used to derive client functions for the API routes.
+  - ~Yesod-Persistent~ : a type-safe multi-database API, used to interact with
+    the underlying ~sqlite~ database.
+  - ~Hspec~ : a test suite library for Haskell.
+
+* To Test And Run App
 
 #+BEGIN_EXAMPLE
-chmod +x run.sh
-./run.sh
+./testAndRun.sh
 #+END_EXAMPLE

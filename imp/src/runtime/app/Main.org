@@ -1,7 +1,7 @@
 #+TITLE: Main Module
 
 * Running The App
-
+  
 #+NAME: app_running
 #+BEGIN_SRC haskell :tangle Main.hs
 module Main where
