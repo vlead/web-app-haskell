@@ -1,0 +1,7 @@
+#+TITLE: A Comparative Study Of Python and Haskell For Web-App-Building Functionality
+
+
+* Problem To Be Solved
+
+To build an User-Directory web-app, implementing the givem requirements, and
+interacting with the web through a REST API.
