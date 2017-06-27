@@ -1,0 +1,11 @@
+#+TITLE: Reading List
+
+
+* Dependency Parsing and Haskell
+
+  - [[https://web.stanford.edu/~mjkay/covington.pdf][A Fundamental Algorithm For Dependency Parsing]]
+  - [[https://web.stanford.edu/~jurafsky/slp3/14.pdf][Dependency Parsing - Jurafsky & Martin]]
+  - [[http://ltrc.iiit.ac.in/icon2016/proceedings/icon2016/pdf/W16-6310.pdf][Dependency Grammars as Haskell Programs]]
+* Computational Semantics and Haskell
+
+  - Computational Semantics With Functional Programming
