@@ -129,6 +129,31 @@ instance FromJSON UniqueUserData where
 
 #+END_SRC
 
+** =UpdateUserData=
+
+Datatype for instruction input when updating an User field.
+
+#+NAME: update_user_data
+#+BEGIN_SRC haskell
+
+data UpdateUserData = UpdateUserData {
+                                     currentData :: String,
+                                     newData :: String
+                                     } deriving (Eq, Read, Show)
+
+
+instance ToJSON UpdateUserData where
+  toJSON (UpdateUserData currentData newData) =
+    object ["current-data" .= currentData,
+            "new-data"     .= newData]
+
+
+instance FromJSON UpdateUserData where
+  parseJSON = withObject "UpdateUserData" $ \ v ->
+    UniqueUserData <$> v .: "current-data"
+                   <*> v .: "new-data"
+
+#+END_SRC
 * Custom Datatypes for Response
 
 Defining custom datatypes/instances for response.
@@ -257,6 +282,7 @@ instance ToJSON ResponseSessionId where
 <<extns_and_imports>>
 <<database_models>>
 <<unique_user_data>>
+<<update_user_data>>
 <<response_user_id>>
 <<response_session_id>>
 <<email_from_session>>

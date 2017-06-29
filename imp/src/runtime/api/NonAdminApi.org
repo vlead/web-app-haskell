@@ -56,7 +56,7 @@ import Servant.API
 * REST
 
 ** =/logout=
-
+   
 *** API Design
 
   - URL :: /logout
@@ -114,18 +114,132 @@ import Servant.API
 type LogoutApi = Header "Cookie" String :> "logout" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Session)) 
 
 #+END_SRC
+** =/setName=
+
+*** API Design
+
+  - URL :: /setName
+
+  - Method :: POST
+
+  - Data Params ::  
+    #+BEGIN_EXAMPLE
+    {
+    "current-data" : "soft-kitty",
+    "new-data" : "warm-kitty"    
+    }
+    #+END_EXAMPLE		   
+
+  - Success Response ::
+    + Code: 200
+
+    + Content ::
+      #+BEGIN_EXAMPLE
+    {
+	"name"  : "warm-kitty",
+    "email" : "soft_kitty@cat.com",
+    "roles" :
+              {"role":"NonAdmin"}
+    }
+      #+END_EXAMPLE
+		
+  - Error Response ::
+    + Code: 401 
+
+    OR
+
+    + Code: 400 Bad Request
+
+    OR
+
+    + Code: 500
+
+    + Content: { error : Exception String}
+
+  - Example ::
+    #+BEGIN_EXAMPLE
+    http://localhost:8000/setName
+    #+END_EXAMPLE
+
+*** Implementation
+
+#+NAME: set_name
+#+BEGIN_SRC haskell
+
+type SetNameApi = Header "Cookie" String :> "setName" :> ReqBody '[JSON] UpdateUserData :> Post '[JSON] (Maybe (User)) 
+
+#+END_SRC
+
+** =/setEmail=
+
+*** API Design
+
+  - URL :: /setEmail
+
+  - Method :: POST
+
+  - Data Params ::  
+    #+BEGIN_EXAMPLE
+    {
+    "current-data" : "small-cat@gmail.com",
+    "new-data" : "small@cat.com"    
+    }
+    #+END_EXAMPLE		   
+
+  - Success Response ::
+    + Code: 200
+
+    + Content ::
+      #+BEGIN_EXAMPLE
+    {
+	"name"  : "small-cat",
+    "email" : "small@cat.com",
+    "roles" :
+              {"role":"NonAdmin"}
+    }
+      #+END_EXAMPLE
+		
+  - Error Response ::
+    + Code: 401 
+
+    OR
+
+    + Code: 400 Bad Request
+
+    OR
+
+    + Code: 500
+
+    + Content: { error : Exception String}
+
+  - Example ::
+    #+BEGIN_EXAMPLE
+    http://localhost:8000/setEmail
+    #+END_EXAMPLE
+
+*** Implementation
+
+#+NAME: set_email
+#+BEGIN_SRC haskell
+
+type SetEmailApi = Header "Cookie" String :> "setEmail" :> ReqBody '[JSON] UpdateUserData :> Post '[JSON] (Maybe (User)) 
+
+#+END_SRC
+
 * API
   
 #+NAME: non_admin_routes
 #+BEGIN_SRC haskell
 
-type NonAdminRoutes = LogoutApi
+type NonAdminRoutes = LogoutApi :<|> SetNameApi :<|> SetEmailApi
 #+END_SRC
 * Tangling
 
 #+BEGIN_SRC haskell :eval no :noweb yes :tangle NonAdminApi.hs 
 <<extns_and_imports>>
 <<logout>>
+<<set_name>>
+<<set_email>>
 <<non_admin_routes>>
 
 #+END_SRC
