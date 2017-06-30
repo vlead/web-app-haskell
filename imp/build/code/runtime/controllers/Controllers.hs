@@ -85,3 +85,19 @@ logoutHelper currentSession pool authVal = flip runSqlPersistMPool pool $ case a
       Just _ -> do
         deleteWhere [SessionUserEmail ==. (sessionUserEmail currentSession)]
         return $ entityVal <$> ifExists
+      
+  
+
+setNameHelper :: ConnectionPool -> UpdateUserData -> IO (Maybe (User))
+setNameHelper pool userData = flip runSqlPersistMPool $ do
+  updateWhere [UserName ==. (currentData userData)] [UserName =. (newData userData)]
+  ret <- selectFirst [UserName ==. (newData userData)]
+  return $ entityVal <$> ret 
+  
+
+
+setEmailHelper :: ConnectionPool -> UpdateUserData -> IO (Maybe (User))
+setEmailHelper pool userData = flip runSqlPersistMPool $ do
+  updateWhere [UserEmail ==. (currentData userData)] [UserEmail =. (newData userData)]
+  ret <- selectFirst [UserEmail ==. (newData userData)]
+  return $ entityVal <$> ret

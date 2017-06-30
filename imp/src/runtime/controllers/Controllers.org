@@ -133,6 +133,33 @@ logoutHelper currentSession pool authVal = flip runSqlPersistMPool pool $ case a
   
 #+END_SRC
 
+** setName controller
+
+#+NAME: set_name
+#+BEGIN_SRC haskell
+
+setNameHelper :: ConnectionPool -> UpdateUserData -> IO (Maybe (User))
+setNameHelper pool userData = flip runSqlPersistMPool $ do
+  updateWhere [UserName ==. (currentData userData)] [UserName =. (newData userData)]
+  ret <- selectFirst [UserName ==. (newData userData)]
+  return $ entityVal <$> ret 
+  
+
+#+END_SRC
+** setEmail controller
+
+#+NAME: set_email
+#+BEGIN_SRC haskell
+
+setEmailHelper :: ConnectionPool -> UpdateUserData -> IO (Maybe (User))
+setEmailHelper pool userData = flip runSqlPersistMPool $ do
+  updateWhere [UserEmail ==. (currentData userData)] [UserEmail =. (newData userData)]
+  ret <- selectFirst [UserEmail ==. (newData userData)]
+  return $ entityVal <$> ret 
+  
+
+#+END_SRC
+
 * Tangling
 
 #+BEGIN_SRC haskell :eval no :noweb yes :tangle Controllers.hs
@@ -142,4 +169,6 @@ logoutHelper currentSession pool authVal = flip runSqlPersistMPool pool $ case a
 <<delete_user_helper>>
 <<login_helper>>
 <<logout_helper>>
+<<set_name>>
+<<set_email>>
 #+END_SRC

@@ -116,9 +116,8 @@ loginCheck pool authSessionId = flip runSqlPersistMPool pool $ do
     Nothing -> return False
     Just _ -> return True
 
-    
--- | To return False if user is NonAdmin user
--- | And True if user is Admin user
+
+-- | To check if logged-in user is admin
 adminAuthCheck :: ConnectionPool -> String -> IO Bool
 adminAuthCheck pool authSessionId = flip runSqlPersistMPool pool $ do
   roleOfLoggedInUser <- get $ toSessionId authSessionId
@@ -129,16 +128,29 @@ adminAuthCheck pool authSessionId = flip runSqlPersistMPool pool $ do
                         Admin    -> return True
 
 
--- | to check if user passed to the function is logged-in self
+-- | to check if logged-in user is same as user passed to the function
 isSelfCheck :: ConnectionPool -> String -> String -> IO Bool
 isSelfCheck pool userData authSessionId = flip runSqlPersistMPool pool $ do
   roleOfLoggedInUser <- get $ toSessionId authSessionId
   case roleOfLoggedInUser of
     Nothing -> return False
-    Just roleValue -> if ((sessionUserEmail roleValue) == userData)
+    Just roleValue -> if (((sessionUserEmail roleValue) == userData))
                         then return True
                         else return False
+                        
 
+-- | to check if logged-in user is either admin or same as user passed to the function
+isEitherAdminOrSelfCheck :: ConnectionPool -> String -> String -> IO Bool
+isEitherAdminOrSelfCheck pool userData authSessionId = flip runSqlPersistMPool pool $ do
+  roleOfUser <- get $ toSessionId authSessionId
+  case roleOfUser of
+    Nothing -> return False
+    Just xs -> case (sessionUserRoles xs) of
+      Admin -> return True
+      NonAdmin -> if ((sessionUserEmail xs) == userData) || ((sessionUserName xs) == userData)
+        then return True
+        else return False
+  
 
 -- | to check if user passed to the function is logged-in admin and not self
 isNotAdminSelfCheck :: ConnectionPool -> Text -> String -> IO Bool
@@ -151,6 +163,7 @@ isNotAdminSelfCheck pool userData authSessionId = flip runSqlPersistMPool pool $
                         Admin -> if ((sessionUserEmail roleValue) == unpack(userData))
                                    then return False
                                    else return True
+
 
 
 #+END_SRC

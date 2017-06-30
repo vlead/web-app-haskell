@@ -53,18 +53,20 @@ server :: ConnectionPool -> Server UserAPI
 server pool =
             (indexHandler 
        :<|> loginHandler)
-       :<|> (logoutHandler)
+       :<|> (logoutHandler
+       :<|> setNameHandler
+       :<|> setEmailHandler)
        :<|> (showUsersHandler
        :<|> addUserHandler
        :<|> deleteUserHandler)
 
        where
 
-         
+         -- authorisation required: none
          indexHandler :: Handler (Text)
          indexHandler = return "Welcome to User Directory"
 
-
+         -- authorisation required: none
          loginHandler :: Session -> Handler (Maybe (ResponseSessionId))
          loginHandler newSession = liftIO $ loginHelper newSession pool
 
@@ -72,8 +74,8 @@ server pool =
          -- authorisation required: login
          showUsersHandler :: Maybe (String) -> Handler ([User])
          showUsersHandler authVal = do
-           isLoggedIn <- liftIO (loginCheck pool $ headerCheck authVal)
-           case isLoggedIn of
+           isAuthorised <- liftIO (loginCheck pool $ headerCheck authVal)
+           case isAuthorised of
              True  -> liftIO $ (showAllUsersHelper pool True)
              False -> throwError err403 {errBody = "User not logged in."}
 
@@ -81,8 +83,8 @@ server pool =
          -- authorisation required: admin login
          addUserHandler :: Maybe (String) -> User -> Handler (Maybe (ResponseUserId))
          addUserHandler authVal newUser = do
-           isAdmin <- liftIO (adminAuthCheck pool $ headerCheck authVal)
-           case isAdmin of
+           isAuthorised <- liftIO (adminAuthCheck pool $ headerCheck authVal)
+           case isAuthorised of
              True  -> liftIO $ (addUserHelper newUser pool True)
              False -> throwError err401 {errBody = "Permission Denied."} 
         
@@ -90,8 +92,8 @@ server pool =
          -- authorisation required: admin login
          deleteUserHandler :: Maybe (String) -> UniqueUserData -> Handler (Maybe (User))
          deleteUserHandler authVal userToDel = do
-           isAdminAndNotSelf <- liftIO (isNotAdminSelfCheck pool (toTextDatatype userToDel) $ headerCheck authVal) 
-           case isAdminAndNotSelf of
+           isAuthorised <- liftIO (isNotAdminSelfCheck pool (toTextDatatype userToDel) $ headerCheck authVal) 
+           case isAuthorised of
              True  -> liftIO (deleteUserHelper (toTextDatatype userToDel) pool True)
              False -> throwError err401 {errBody = "Permission Denied."} 
 
@@ -99,10 +101,28 @@ server pool =
          -- authorisation required: login
          logoutHandler :: Maybe (String) -> Session -> Handler (Maybe (Session))
          logoutHandler authVal currentSession = do
-           isLoggedInAndSelf <- liftIO (isSelfCheck pool (sessionToEmail currentSession) $ headerCheck authVal) 
-           case isLoggedInAndSelf of
+           isAuthorised <- liftIO (isSelfCheck pool (sessionToEmail currentSession) $ headerCheck authVal) 
+           case isAuthorised of
              True  -> liftIO (logoutHelper currentSession pool True)
-             False -> throwError err401 {errBody = "Permission Denied."} 
+             False -> throwError err401 {errBody = "Permission Denied."}
+
+
+         -- authorisation required : either NonAdmin and Self, or Admin
+         setNameHandler :: Maybe (String) -> UpdateUserData -> Handler (Maybe (User))
+         setNameHandler authVal userData = do
+           isAuthorised <- liftIO (isEitherAdminOrSelfCheck pool (currentEmail userData) $ headerCheck authVal)
+           case isAuthorised of
+             True  -> liftIO (setNameHelper pool userData)
+             False -> throwError err401 {errBody = "Permission Denied."}
+
+
+         -- authorisation required : either NonAdmin and Self, or Admin
+         setEmailHandler :: Maybe (String) -> UpdateUserData -> Handler (Maybe (User))
+         setEmailHandler authVal userData = do
+           isAuthorised <- liftIO (isEitherAdminOrSelfCheck pool (currentEmail userData) $ headercheck authVal)
+           case isAuthorised of
+             True  -> liftIO (setEmailHelper pool userData)
+             False -> throwError err401 {errBody = "Permission Denied."}
              
 
 

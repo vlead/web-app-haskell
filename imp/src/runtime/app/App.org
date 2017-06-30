@@ -118,8 +118,20 @@ server pool =
 
          -- authorisation required : either NonAdmin and Self, or Admin
          setNameHandler :: Maybe (String) -> UpdateUserData -> Handler (Maybe (User))
-         setNameHandler authVal data = do
-           isAuthorised
+         setNameHandler authVal userData = do
+           isAuthorised <- liftIO (isEitherAdminOrSelfCheck pool (currentEmail userData) $ headerCheck authVal)
+           case isAuthorised of
+             True  -> liftIO (setNameHelper pool userData)
+             False -> throwError err401 {errBody = "Permission Denied."}
+
+
+         -- authorisation required : either NonAdmin and Self, or Admin
+         setEmailHandler :: Maybe (String) -> UpdateUserData -> Handler (Maybe (User))
+         setEmailHandler authVal userData = do
+           isAuthorised <- liftIO (isEitherAdminOrSelfCheck pool (currentEmail userData) $ headercheck authVal)
+           case isAuthorised of
+             True  -> liftIO (setEmailHelper pool userData)
+             False -> throwError err401 {errBody = "Permission Denied."}
              
 
 

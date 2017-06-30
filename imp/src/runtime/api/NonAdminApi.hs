@@ -46,4 +46,10 @@ import Servant.API
 type LogoutApi = Header "Cookie" String :> "logout" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Session)) 
 
 
-type NonAdminRoutes = LogoutApi
+type SetNameApi = Header "Cookie" String :> "setName" :> ReqBody '[JSON] UpdateUserData :> Post '[JSON] (Maybe (User)) 
+
+
+type SetEmailApi = Header "Cookie" String :> "setEmail" :> ReqBody '[JSON] UpdateUserData :> Post '[JSON] (Maybe (User)) 
+
+
+type NonAdminRoutes = LogoutApi :<|> SetNameApi :<|> SetEmailApi

@@ -150,7 +150,7 @@ instance ToJSON UpdateUserData where
 
 instance FromJSON UpdateUserData where
   parseJSON = withObject "UpdateUserData" $ \ v ->
-    UniqueUserData <$> v .: "current-data"
+    UpdateUserData <$> v .: "current-data"
                    <*> v .: "new-data"
 
 #+END_SRC

@@ -53,6 +53,24 @@ instance FromJSON UniqueUserData where
 
 
 
+
+data UpdateUserData = UpdateUserData {
+                                     currentData :: String,
+                                     newData :: String
+                                     } deriving (Eq, Read, Show)
+
+
+instance ToJSON UpdateUserData where
+  toJSON (UpdateUserData currentData newData) =
+    object ["current-data" .= currentData,
+            "new-data"     .= newData]
+
+
+instance FromJSON UpdateUserData where
+  parseJSON = withObject "UpdateUserData" $ \ v ->
+    UpdateUserData <$> v .: "current-data"
+                   <*> v .: "new-data"
+
 data ResponseUserId = ResponseUserId {
                                      userIdValue :: (Key (User))
                                      } deriving (Eq, Read, Show)
