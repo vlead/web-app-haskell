@@ -1,10 +1,49 @@
-data Category = Nn | Na | V deriving (Eq, Ord)
+import Control.Monad
+import Data.String
 
-data Role = Subj | Cmpl deriving (Eq, Ord)
+data Category = Nn | Na | V | Dt  deriving (Eq, Ord)
 
-dic "Joannes" = [Nn]
-dic "Mariam"  = [Na]
-dic "Amat"    = [V]
+data Role = Subj | Cmpl | Det deriving (Eq, Ord)
+
+instance Show Role where
+  show Subj = "Subj"
+  show Cmpl = "Cmpl"
+  show Det  = "Det"
+
+instance Show Category where
+  show Nn = "Nn"
+  show Na = "Na"
+  show V  = "V"
+  show Dt = "Dt"
+
+
+-- nominative nouns
+dic "I" = [Nn]
+dic "You" = [Nn]
+dic "We" = [Nn]
+dic "She" = [Nn]
+dic "He" = [Nn]
+dic "They" = [Nn]
+
+-- accusative nouns
+dic "cat" = [Na]
+dic "cats" = [Na]
+
+-- determiners
+dic "a" = [Dt]
+dic "the" = [Dt]
+
+-- verbs
+dic "owns" = [V]
+dic "own" = [V]
+dic "fed" = [V]
+dic "feed" = [V]
+
+-- links
+link V Nn = [Subj]
+link V Na = [Cmpl]
+link Na Dt = [Det]
+link _ _ = []
 
 -- to connect a dependent to its heads
 heads d = [ (r, h) | h <- preds d,
@@ -13,15 +52,10 @@ heads d = [ (r, h) | h <- preds d,
 
 -- to connect a head to its dependents
 deps h = [ (r, d) | d <- preds h,
-                    r <- link (category h) (category d)]       
+                    r <- link (getCategory h) (getCategory d)]       
 
--- to show the role of an arc
-link V Nn = [Subj]
-link V Na = [Cmpl]
-link _ _  = []
 
-(>=>) :: (a -> [a]) -> (a -> [a]) -> (a -> [a])
-f >=> g = g . f
+pass = const True
 
 clo, mclo, rclo, mrclo :: (a -> [a]) -> a -> [a]
 clo f = f >=> (pure `mappend` clo f)
@@ -42,7 +76,7 @@ data Step = Step {
                  category :: Category,
                  headArc :: [Arc],
                  depArcs :: [Arc]
-                 } deriving (Eq, Ord)
+                 } deriving (Eq, Ord, Show)
 
 
 type Parse = [Step]
@@ -105,20 +139,20 @@ rightHeadHelper argNode = [(role, node) | node <- succs argNode,
 headHelper = leftHeadHelper `mappend` rightHeadHelper
 
 leftDep, rightDep, dep, leftHead, rightHead, parseHead :: Node -> [Node]
-leftDep   = snd <*> leftDepHelper
-rightDep  = snd <*> rightDepHelper
-dep       = snd <*> depHelper
-leftHead  = snd <*> leftHeadHelper
-rightHead = snd <*> rightHeadHelper
-parseHead      = snd <*> headHelper
+leftDep   = fmap snd . leftDepHelper
+rightDep  = fmap snd . rightDepHelper
+dep       = fmap snd . depHelper
+leftHead  = fmap snd . leftHeadHelper
+rightHead = fmap snd . rightHeadHelper
+parseHead = fmap snd . headHelper
 
-leftDepRoles, rightDepRoles, depRoles, leftHeadRoles, rightHeadRoles, headRoles ::Node -> [Role]
-leftDepRoles   = fst <*> leftDepHelper
-rightDepRoles  = fst <*> rightDepHelper
-depRoles       = fst <*> depHelper
-leftHeadRoles  = fst <*> leftHeadHelper
-rightHeadRoles = fst <*> rightHeadHelper
-headRoles      = fst <*> headHelper
+leftDepRoles, rightDepRoles, depRoles, leftHeadRoles, rightHeadRoles, headRoles :: Node -> [Role]
+leftDepRoles   = fmap fst . leftDepHelper
+rightDepRoles  = fmap fst . rightDepHelper
+depRoles       = fmap fst . depHelper
+leftHeadRoles  = fmap fst . leftHeadHelper
+rightHeadRoles = fmap fst . rightHeadHelper
+headRoles      = fmap fst . headHelper
 
 leftDepBy, rightDepBy, depBy :: Role -> Node -> [Node]
 leftDepBy argRole argNode  = [ node | (argRole, node) <- leftDepHelper argNode ]
@@ -165,3 +199,12 @@ connect = (addDep >=> connect) `mappend` addHead `mappend` pure
 
 step :: ParseWord -> Parse -> [Parse]
 step word = shift word >=> connect
+
+steps :: [ParseWord] -> [Parse]
+steps = foldM (flip step) []
+
+parser :: [ParseWord] -> [Parse]
+parser = filter (pass . lastNode) . steps
+
+parse :: String -> [Parse]
+parse sentence = parser (words sentence)

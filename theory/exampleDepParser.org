@@ -6,7 +6,7 @@
 #+BEGIN_SRC haskell :tangle exampleDepParser.hs
 
 import Control.Monad
-
+import Data.String
 #+END_SRC
 
 
@@ -23,8 +23,8 @@ lexicon and a grammar - represented using structures native to Haskell - and
 outputs a dependency structure.
 
 
-* Lexicon And Grammar
-
+* Example Latin Lexicon And Grammar
+  
 The parser takes a =lexicon= and =grammar= as input.
 
 ** Lexicon
@@ -36,7 +36,7 @@ The lexicon consists of :
   - Nouns :: Joannes, Mariam
   - Verbs :: Amat
 
-#+BEGIN_SRC haskell :tangle exampleDepParser.hs
+#+BEGIN_SRC haskell 
 
 data Category = Nn | Na | V deriving (Eq, Ord)
 
@@ -73,7 +73,7 @@ heads. (Of course, the grammar presented above does not allow for this
 possibility, but nevertheless that is a feature of the grammar and not the
 parser engine)
 
-#+BEGIN_SRC haskell :tangle exampleDepParser.hs
+#+BEGIN_SRC haskell 
 
 -- to connect a dependent to its heads
 heads d = [ (r, h) | h <- preds d,
@@ -88,6 +88,81 @@ deps h = [ (r, d) | d <- preds h,
 link V Nn = [Subj]
 link V Na = [Cmpl]
 link _ _  = []
+
+pass = const True
+#+END_SRC
+
+
+* Example English Lexicon and Grammar
+
+The author of the paper gives examples of lexicons featuring small subsets of
+Latin and Polish. Here, we build a lexicon featuring a small subset of English,
+talking about people and cats.
+
+** Lexicon
+
+#+BEGIN_SRC haskell :tangle exampleDepParser.hs
+
+
+data Category = Nn | Na | V | Dt  deriving (Eq, Ord)
+
+data Role = Subj | Cmpl | Det deriving (Eq, Ord)
+
+instance Show Role where
+  show Subj = "Subj"
+  show Cmpl = "Cmpl"
+  show Det  = "Det"
+
+instance Show Category where
+  show Nn = "Nn"
+  show Na = "Na"
+  show V  = "V"
+  show Dt = "Dt"
+
+
+-- nominative nouns
+dic "I" = [Nn]
+dic "You" = [Nn]
+dic "We" = [Nn]
+dic "She" = [Nn]
+dic "He" = [Nn]
+dic "They" = [Nn]
+
+-- accusative nouns
+dic "cat" = [Na]
+dic "cats" = [Na]
+
+-- determiners
+dic "a" = [Dt]
+dic "the" = [Dt]
+
+-- verbs
+dic "owns" = [V]
+dic "own" = [V]
+dic "fed" = [V]
+dic "feed" = [V]
+
+-- links
+link V Nn = [Subj]
+link V Na = [Cmpl]
+link Na Dt = [Det]
+link _ _ = []
+
+#+END_SRC
+** Grammar
+
+#+BEGIN_SRC haskell :tangle exampleDepParser.hs
+
+
+-- to connect a dependent to its heads
+heads d = [ (r, h) | h <- preds d,
+                     r <- link (getCategory h) (getCategory d)]
+
+
+-- to connect a head to its dependents
+deps h = [ (r, d) | d <- preds h,
+                    r <- link (getCategory h) (getCategory d)]       
+
 
 pass = const True
 #+END_SRC
@@ -499,4 +574,6 @@ steps = foldM (flip step) []
 parser :: [ParseWord] -> [Parse]
 parser = filter (pass . lastNode) . steps
 
+parse :: String -> [Parse]
+parse sentence = parser (words sentence) 
 #+END_SRC
