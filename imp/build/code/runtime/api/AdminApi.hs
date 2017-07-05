@@ -40,11 +40,9 @@ import Data.Text
 import Database.Persist
 
 import Models
+import Role
 
 import Servant.API
-
-type ShowUsersApi = Header "Cookie" String :> "showUsers" :> Get '[JSON] [User] 
-
 
 type AddUserApi = Header "Cookie" String :> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (ResponseUserId))
 
@@ -52,4 +50,15 @@ type AddUserApi = Header "Cookie" String :> "addUser" :> ReqBody '[JSON] User :>
 type DeleteUserApi = Header "Cookie" String :> "deleteUser" :> ReqBody '[JSON] UniqueUserData :> Post '[JSON] (Maybe (User))
 
 
-type AdminRoutes = ShowUsersApi :<|> AddUserApi :<|> DeleteUserApi
+type ShowUserDetailsApi = Header "Cookie" String :> "showUserDetails" :> Capture "email" String :> Post '[JSON] (Maybe (User))
+
+type ShowSessionsApi = Header "Cookie" String :> "showSessions" :> Post '[JSON] [Session]
+
+type ShowRolesApi = Header "Cookie" String :> "showRoles" :> Capture "email" String :> Post '[JSON] [Role]
+
+type AddRoleApi = Header "Cookie" String :> "addRole" :> Capture "email" String :> Capture "role" Role :> Post '[JSON] (Maybe (User))
+
+type DeleteRoleApi = Header "Cookie" String :> "deleteRole" :> Capture "email" String :> Capture "role" Role :> Post '[JSON] (Maybe (User))
+
+
+type AdminRoutes = ShowUserDetailsApi :<|> AddUserApi :<|> DeleteUserApi :<|> ShowSessionsApi :<|> ShowRolesApi :<|> AddRoleApi :<|> DeleteRoleApi

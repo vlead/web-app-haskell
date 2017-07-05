@@ -4,7 +4,7 @@
 * Introduction 
 
 Defining the portion of the Api that can be accessed without logging in to the
-system
+system.
 
 * Language Extensions and Imports 
 
@@ -125,6 +125,8 @@ type LoginApi = "login" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Respo
 #+END_SRC
 
 * Combined 
+
+Combining the APIs into one type.
   
 #+NAME: non_secure_routes
 #+BEGIN_SRC haskell

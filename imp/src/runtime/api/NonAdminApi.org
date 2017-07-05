@@ -114,6 +114,56 @@ import Servant.API
 type LogoutApi = Header "Cookie" String :> "logout" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Session)) 
 
 #+END_SRC
+** =/showUsers=
+
+*** API Design
+
+  - URL :: /showUsers
+  - Method :: GET
+  - Headers ::
+    
+    + Cookie: <session-id>
+
+  - URL Params :: None 
+       
+  - Success Response ::
+    + Code: 200
+
+    + Content :: list of users - name and email
+      #+BEGIN_EXAMPLE
+    [
+      {
+        "name"  : <value>,
+        "email" : <value>  
+      }
+    ]
+      #+END_EXAMPLE
+
+  - Error Response ::
+    + Code: 403 
+
+    OR
+
+    + Code: 400 Bad Request
+
+    OR
+
+    + Code: 500
+
+  - Example ::
+    #+BEGIN_EXAMPLE
+    http://localhost:8000/showUsers
+    #+END_EXAMPLE
+
+*** Implementation
+
+#+NAME: show_users
+#+BEGIN_SRC haskell
+
+type ShowUsersApi = Header "Cookie" String :> "showUsers" :> Get '[JSON] [ShowUserData] 
+
+#+END_SRC
+
 ** =/setName=
 
 *** API Design
@@ -225,18 +275,21 @@ type SetNameApi = Header "Cookie" String :> "setName" :> ReqBody '[JSON] UpdateU
 type SetEmailApi = Header "Cookie" String :> "setEmail" :> ReqBody '[JSON] UpdateUserData :> Post '[JSON] (Maybe (User)) 
 
 #+END_SRC
-
 * API
+
+Combining the above APIs into one type.
   
 #+NAME: non_admin_routes
 #+BEGIN_SRC haskell
 
-type NonAdminRoutes = LogoutApi :<|> SetNameApi :<|> SetEmailApi
+type NonAdminRoutes = ShowUsersApi :<|> LogoutApi :<|> SetNameApi :<|> SetEmailApi
 #+END_SRC
+
 * Tangling
 
 #+BEGIN_SRC haskell :eval no :noweb yes :tangle NonAdminApi.hs 
 <<extns_and_imports>>
+<<show_users>>
 <<logout>>
 <<set_name>>
 <<set_email>>

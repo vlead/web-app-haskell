@@ -11,6 +11,7 @@
 module Models where
 import Data.Aeson
 import Data.Text
+import Web.HttpApiData
 
 import Role
 
@@ -26,13 +27,13 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 User
   name String
   email String
-  roles Role
+  roles [Role]
   UniqueEmail email
   deriving Eq Read Show
 Session
   userMappingToSession UserId
   userEmail String
-  userRoles Role
+  userRoles [Role]
   UniqueSessionDetails userEmail userRoles
   deriving Eq Read Show
 |]
@@ -82,6 +83,29 @@ data ResponseSessionId = ResponseSessionId {
                                      sessionIdValue :: (Key (Session))
                                      } deriving (Eq, Read, Show)
 
+
+
+data ShowUserData = ShowUserData {
+                                 showUserName  :: String,
+                                 showUserEmail :: String
+                                 } deriving (Show, Read, Eq)
+
+
+instance ToJSON ShowUserData where
+  toJSON (ShowUserData showUserName showUserEmail) =
+    object ["name"  .= showUserName,
+            "email" .= showUserEmail]
+
+
+instance FromJSON ShowUserData where
+  parseJSON = withObject "ShowUserData" $ \ v ->
+    ShowUserData <$> v .: "name"
+                   <*> v .: "email"
+
+
+-- function that extracts ShowUserData from User 
+toShowUserData :: User -> ShowUserData
+toShowUserData (User userName userEmail userRoles) = ShowUserData userName userEmail
 
 
 -- to extract email from session

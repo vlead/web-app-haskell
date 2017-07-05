@@ -43,6 +43,9 @@ import Models
 
 import Servant.API
 
+type ShowUsersApi = Header "Cookie" String :> "showUsers" :> Get '[JSON] [ShowUserData] 
+
+
 type LogoutApi = Header "Cookie" String :> "logout" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Session)) 
 
 
@@ -52,4 +55,4 @@ type SetNameApi = Header "Cookie" String :> "setName" :> ReqBody '[JSON] UpdateU
 type SetEmailApi = Header "Cookie" String :> "setEmail" :> ReqBody '[JSON] UpdateUserData :> Post '[JSON] (Maybe (User)) 
 
 
-type NonAdminRoutes = LogoutApi :<|> SetNameApi :<|> SetEmailApi
+type NonAdminRoutes = ShowUsersApi :<|> LogoutApi :<|> SetNameApi :<|> SetEmailApi

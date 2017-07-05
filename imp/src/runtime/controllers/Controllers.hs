@@ -9,6 +9,7 @@ module Controllers where
 
 import           Data.Aeson
 import           Data.Text
+import           Data.List 
 import           Control.Monad.IO.Class
 import           Control.Monad.Logger (runStderrLoggingT)
 
@@ -33,12 +34,12 @@ import           Authentication
 
 
 -- helper function for showUsersHandler
-showAllUsersHelper :: ConnectionPool -> Bool -> IO ([User])
+showAllUsersHelper :: ConnectionPool -> Bool -> IO ([ShowUserData])
 showAllUsersHelper pool authVal = flip runSqlPersistMPool pool $ case authVal of
     False -> return []
     True  -> do
       users <- selectList [] []
-      return $ Prelude.map entityVal users
+      return $ Prelude.map toShowUserData $ Prelude.map entityVal users
 
 
 -- helper function for addUserHandler
@@ -46,9 +47,9 @@ addUserHelper :: User -> ConnectionPool -> Bool -> IO (Maybe (ResponseUserId))
 addUserHelper newUser pool authVal = flip runSqlPersistMPool pool $ case authVal of
   False -> return Nothing
   True  -> do
-    exists <- selectFirst [UserName ==. (userName newUser)] []
+    exists <- selectFirst [UserEmail ==. (userEmail newUser)] []
     case exists of
-      Nothing -> Just <$> (ResponseUserId <$> insert newUser)
+      Nothing -> Just <$> (ResponseUserId <$> Database.Persist.Sqlite.insert newUser)
       Just _  -> return Nothing
 
 
@@ -68,10 +69,14 @@ deleteUserHelper userToDel pool authVal = flip runSqlPersistMPool pool $ case au
 -- helper function for loginHandler
 loginHelper :: Session -> ConnectionPool -> IO (Maybe (ResponseSessionId))
 loginHelper newSession pool = flip runSqlPersistMPool pool $ do
-  ifExists <- selectFirst [UserEmail ==. (sessionUserEmail newSession)] []
-  case ifExists of
-    Nothing -> return Nothing
-    Just _  -> Just <$> (ResponseSessionId <$> insert newSession)
+  ifLoggedIn <- selectFirst [SessionUserEmail ==. (sessionUserEmail newSession), SessionUserRoles ==. (sessionUserRoles newSession)] []
+  case ifLoggedIn of
+    Just _ -> return Nothing
+    Nothing -> do 
+      ifExists <- selectFirst [UserEmail ==. (sessionUserEmail newSession)] []
+      case ifExists of
+        Nothing -> return Nothing
+        Just _  -> Just <$> (ResponseSessionId <$> Database.Persist.Sqlite.insert newSession)
   
 
 -- helper function for logoutHandler
@@ -89,15 +94,86 @@ logoutHelper currentSession pool authVal = flip runSqlPersistMPool pool $ case a
   
 
 setNameHelper :: ConnectionPool -> UpdateUserData -> IO (Maybe (User))
-setNameHelper pool userData = flip runSqlPersistMPool $ do
+setNameHelper pool userData = flip runSqlPersistMPool pool $ do
   updateWhere [UserName ==. (currentData userData)] [UserName =. (newData userData)]
-  ret <- selectFirst [UserName ==. (newData userData)]
+  ret <- selectFirst [UserName ==. (newData userData)] []
   return $ entityVal <$> ret 
   
 
 
 setEmailHelper :: ConnectionPool -> UpdateUserData -> IO (Maybe (User))
-setEmailHelper pool userData = flip runSqlPersistMPool $ do
+setEmailHelper pool userData = flip runSqlPersistMPool pool $ do
   updateWhere [UserEmail ==. (currentData userData)] [UserEmail =. (newData userData)]
-  ret <- selectFirst [UserEmail ==. (newData userData)]
-  return $ entityVal <$> ret
+  ret <- selectFirst [UserEmail ==. (newData userData)] []
+  return $ entityVal <$> ret 
+  
+
+
+showUserDetailsHelper :: ConnectionPool -> String -> IO (Maybe (User))
+showUserDetailsHelper pool userData = flip runSqlPersistMPool pool $ do
+  user <- selectFirst [UserEmail ==. userData] []
+  return $ entityVal <$> user
+
+
+showSessionsHelper :: ConnectionPool -> IO ([Session])
+showSessionsHelper pool = flip runSqlPersistMPool pool $ do
+  sessions <- selectList [] []
+  return $ Prelude.map entityVal sessions
+
+showRolesHelper :: ConnectionPool -> String -> IO ([Role])
+showRolesHelper pool userData = flip runSqlPersistMPool pool $ do
+  user <- selectFirst [UserEmail ==. userData] []
+  case user of
+    Nothing -> return []
+    Just xs -> return (userRoles $ entityVal xs)
+  
+
+
+addRoleHelper :: ConnectionPool -> String -> Role -> IO (Maybe (User))
+addRoleHelper pool userData newRole = flip runSqlPersistMPool pool $ do
+  user <- selectFirst [UserEmail ==. userData] []
+  case user of
+    Nothing -> return Nothing
+    Just xs -> let
+      roles = userRoles (entityVal xs)
+      in 
+        if ((newRole `elem` roles) || ((Data.List.length roles) == 2))
+        then return Nothing
+        else 
+          let
+            newRoles = roles ++ [newRole]
+          in
+            do
+              updateWhere [UserEmail ==. userData] [UserRoles =. newRoles]
+              updatedUser <- selectFirst [UserEmail ==. userData] []
+              return $ entityVal <$> updatedUser
+
+
+
+
+
+-- function to delete role: takes advantage of the fact that
+-- there are only two roles
+deleteRole :: Role -> [Role] -> [Role]
+deleteRole role ls = if ((Data.List.head ls) == role)
+  then (Data.List.tail ls)
+  else (Data.List.init ls)
+
+  
+deleteRoleHelper :: ConnectionPool -> String -> Role -> IO (Maybe (User))
+deleteRoleHelper pool userData newRole = flip runSqlPersistMPool pool $ do
+  user <- selectFirst [UserEmail ==. userData] []
+  case user of
+    Nothing -> return Nothing
+    Just xs -> let
+      roles = userRoles (entityVal xs)
+      in 
+        if ((newRole `elem` roles) && (Data.List.length roles > 1))
+        then let
+                 newRoles = deleteRole newRole roles
+               in
+                 do
+                   updateWhere [UserEmail ==. userData] [UserRoles =. newRoles]
+                   updatedUser <- selectFirst [UserEmail ==. userData] []
+                   return $ entityVal <$> updatedUser
+        else return Nothing

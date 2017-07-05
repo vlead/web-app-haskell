@@ -1,0 +1,629 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2017-06-30 Fri 10:21 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Models - Using Persistent Database</title>
+<meta name="generator" content="Org mode" />
+<meta name="author" content="Atreyee" />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { width: 90%; }
+  /*]]>*/-->
+</style>
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2013 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="content">
+<h1 class="title">Models - Using Persistent Database</h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#orge48cd87">1. Introduction</a></li>
+<li><a href="#org16fa5d0">2. Language Extensions and Imports</a></li>
+<li><a href="#org1f100ba">3. Externally Defined Datatypes</a>
+<ul>
+<li><a href="#org121d661">3.1. Role</a></li>
+</ul>
+</li>
+<li><a href="#orgbaab454">4. Database Models</a></li>
+<li><a href="#orgc2b6921">5. Custom Datatypes For Instruction Input</a>
+<ul>
+<li><a href="#org91cef17">5.1. <code>UniqueUserData</code> : a unique value to identify the user by</a></li>
+<li><a href="#org7c87f9d">5.2. <code>UpdateUserData</code></a></li>
+</ul>
+</li>
+<li><a href="#org5a1a393">6. Custom Datatypes for Response</a>
+<ul>
+<li><a href="#org92fb6d6">6.1. ResponseUserId</a></li>
+<li><a href="#orgf6a7a86">6.2. ResponseSessionId</a></li>
+</ul>
+</li>
+<li><a href="#org10f95e4">7. Datatype Work</a>
+<ul>
+<li><a href="#orgb3e5ae8">7.1. Converting To And From Route Datatypes</a>
+<ul>
+<li><a href="#orgc43efa1">7.1.1. Extracting <code>sessionUserEmail</code> from <code>Session</code></a></li>
+<li><a href="#orgf2a4248">7.1.2. <code>UniqueUserData</code> to <code>Text</code></a></li>
+</ul>
+</li>
+<li><a href="#org31eea72">7.2. Jsonifying Datatypes</a>
+<ul>
+<li><a href="#org42a0674">7.2.1. Jsonifying User Datatype</a></li>
+<li><a href="#org6aec1cb">7.2.2. Jsonifying Session Datatype</a></li>
+<li><a href="#org5e782dc">7.2.3. Jsonifying ResponseUserId Datatype</a></li>
+<li><a href="#org495b774">7.2.4. Jsonifying ResponseSessionId Datatype</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#org3aac43d">8. Tangling</a></li>
+</ul>
+</div>
+</div>
+
+
+<div id="outline-container-orge48cd87" class="outline-2">
+<h2 id="orge48cd87"><span class="section-number-2">1</span> Introduction</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+The datatypes used in the system are defined here.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org16fa5d0" class="outline-2">
+<h2 id="org16fa5d0"><span class="section-number-2">2</span> Language Extensions and Imports</h2>
+<div class="outline-text-2" id="text-2">
+<div class="org-src-container">
+<pre class="src src-haskell" id="orga6f65f4">{-# LANGUAGE EmptyDataDecls             #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE QuasiQuotes                #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeFamilies               #-}
+
+module Models where
+import Data.Aeson
+import Data.Text
+
+import Role
+
+
+import           Control.Monad.IO.Class  (liftIO)
+import           Database.Persist 
+import           Database.Persist.Sqlite
+import           Database.Persist.TH
+
+import           GHC.Generics
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org1f100ba" class="outline-2">
+<h2 id="org1f100ba"><span class="section-number-2">3</span> Externally Defined Datatypes</h2>
+<div class="outline-text-2" id="text-3">
+<p>
+Datatype <code>Role</code>, defined in an external file.
+</p>
+</div>
+<div id="outline-container-org121d661" class="outline-3">
+<h3 id="org121d661"><span class="section-number-3">3.1</span> Role</h3>
+<div class="outline-text-3" id="text-3-1">
+<div class="org-src-container">
+<pre class="src src-haskell" id="orge7dcfe6">-- Role.hs
+-- defining the enumerated Role datatype
+
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE DeriveGeneric #-}
+
+
+module Role where
+
+import Database.Persist.TH
+import GHC.Generics
+import Data.Aeson
+import Data.Text
+
+data Role = Admin | NonAdmin
+  deriving (Generic, Show, Read, Eq)
+
+instance ToJSON Role where
+  toJSON Admin = object [pack("role") .= "Admin"]
+  toJSON NonAdmin = object [pack("role") .= "NonAdmin"]
+
+instance FromJSON Role where
+  parseJSON (Object o) = do
+    role &lt;- o .: pack("role")
+    case (role :: String) of
+      "Admin" -&gt; return Admin
+      "NonAdmin" -&gt; return NonAdmin
+
+-- storing this datatype as a PersistField type
+derivePersistField "Role"
+</pre>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-orgbaab454" class="outline-2">
+<h2 id="orgbaab454"><span class="section-number-2">4</span> Database Models</h2>
+<div class="outline-text-2" id="text-4">
+<p>
+These are the models for the types stored in the database.
+</p>
+
+<p>
+Each datatype corresponds to a table, and each field of a datatype corresponds
+to a column in the table.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell" id="orge9732a7">share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
+User
+  name String
+  email String
+  roles Role
+  UniqueEmail email
+  deriving Eq Read Show
+Session
+  userMappingToSession UserId
+  userEmail String
+  userRoles Role
+  UniqueSessionDetails userEmail userRoles
+  deriving Eq Read Show
+|]
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgc2b6921" class="outline-2">
+<h2 id="orgc2b6921"><span class="section-number-2">5</span> Custom Datatypes For Instruction Input</h2>
+<div class="outline-text-2" id="text-5">
+<p>
+Defining custom datatypes for the request body when required.
+</p>
+</div>
+
+<div id="outline-container-org91cef17" class="outline-3">
+<h3 id="org91cef17"><span class="section-number-3">5.1</span> <code>UniqueUserData</code> : a unique value to identify the user by</h3>
+<div class="outline-text-3" id="text-5-1">
+<p>
+In this case, we take <code>UniqueUserData</code> to be <code>userEmail</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell" id="org636f808">data UniqueUserData = UniqueUserData {
+                                       userData :: String
+                                     } deriving (Eq, Read, Show)
+
+
+instance ToJSON UniqueUserData where
+  toJSON (UniqueUserData userData) =
+    object ["data" .= userData]
+
+instance FromJSON UniqueUserData where
+  parseJSON = withObject "UniqueUserData" $ \ v -&gt;
+    UniqueUserData &lt;$&gt; v .: "data"
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org7c87f9d" class="outline-3">
+<h3 id="org7c87f9d"><span class="section-number-3">5.2</span> <code>UpdateUserData</code></h3>
+<div class="outline-text-3" id="text-5-2">
+<p>
+Datatype for instruction input when updating an User field.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-haskell" id="org3685d6c">data UpdateUserData = UpdateUserData {
+                                     currentData :: String,
+                                     newData :: String
+                                     } deriving (Eq, Read, Show)
+
+
+instance ToJSON UpdateUserData where
+  toJSON (UpdateUserData currentData newData) =
+    object ["current-data" .= currentData,
+            "new-data"     .= newData]
+
+
+instance FromJSON UpdateUserData where
+  parseJSON = withObject "UpdateUserData" $ \ v -&gt;
+    UpdateUserData &lt;$&gt; v .: "current-data"
+                   &lt;*&gt; v .: "new-data"
+</pre>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-org5a1a393" class="outline-2">
+<h2 id="org5a1a393"><span class="section-number-2">6</span> Custom Datatypes for Response</h2>
+<div class="outline-text-2" id="text-6">
+<p>
+Defining custom datatypes/instances for response.
+</p>
+</div>
+
+<div id="outline-container-org92fb6d6" class="outline-3">
+<h3 id="org92fb6d6"><span class="section-number-3">6.1</span> ResponseUserId</h3>
+<div class="outline-text-3" id="text-6-1">
+<div class="org-src-container">
+<pre class="src src-haskell" id="org1deef49">data ResponseUserId = ResponseUserId {
+                                     userIdValue :: (Key (User))
+                                     } deriving (Eq, Read, Show)
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgf6a7a86" class="outline-3">
+<h3 id="orgf6a7a86"><span class="section-number-3">6.2</span> ResponseSessionId</h3>
+<div class="outline-text-3" id="text-6-2">
+<div class="org-src-container">
+<pre class="src src-haskell" id="org7c3d3e1">data ResponseSessionId = ResponseSessionId {
+                                     sessionIdValue :: (Key (Session))
+                                     } deriving (Eq, Read, Show)
+</pre>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-org10f95e4" class="outline-2">
+<h2 id="org10f95e4"><span class="section-number-2">7</span> Datatype Work</h2>
+<div class="outline-text-2" id="text-7">
+</div><div id="outline-container-orgb3e5ae8" class="outline-3">
+<h3 id="orgb3e5ae8"><span class="section-number-3">7.1</span> Converting To And From Route Datatypes</h3>
+<div class="outline-text-3" id="text-7-1">
+</div><div id="outline-container-orgc43efa1" class="outline-4">
+<h4 id="orgc43efa1"><span class="section-number-4">7.1.1</span> Extracting <code>sessionUserEmail</code> from <code>Session</code></h4>
+<div class="outline-text-4" id="text-7-1-1">
+<div class="org-src-container">
+<pre class="src src-haskell" id="org0e5fb60">-- to extract email from session
+sessionToEmail :: Session -&gt; String
+sessionToEmail (Session sessionUserId sessionUserEmail sessionUserRoles) = sessionUserEmail
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgf2a4248" class="outline-4">
+<h4 id="orgf2a4248"><span class="section-number-4">7.1.2</span> <code>UniqueUserData</code> to <code>Text</code></h4>
+<div class="outline-text-4" id="text-7-1-2">
+<div class="org-src-container">
+<pre class="src src-haskell" id="orgd88ef6a">toTextDatatype :: UniqueUserData -&gt; Text
+toTextDatatype (UniqueUserData userData) = pack(userData)
+</pre>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-org31eea72" class="outline-3">
+<h3 id="org31eea72"><span class="section-number-3">7.2</span> Jsonifying Datatypes</h3>
+<div class="outline-text-3" id="text-7-2">
+<p>
+Making types an instance of classes <code>ToJSON</code> and <code>FromJSON</code>.
+</p>
+</div>
+
+<div id="outline-container-org42a0674" class="outline-4">
+<h4 id="org42a0674"><span class="section-number-4">7.2.1</span> Jsonifying User Datatype</h4>
+<div class="outline-text-4" id="text-7-2-1">
+<div class="org-src-container">
+<pre class="src src-haskell" id="orgd18df8f">instance ToJSON User where
+  toJSON (User name email roles) =
+    object [ "name" .= name
+           , "email"  .= email
+           , "roles" .= roles]
+
+
+instance FromJSON User where
+  parseJSON = withObject "User" $ \ v -&gt;
+    User &lt;$&gt; v .: "name"
+         &lt;*&gt; v .: "email"
+         &lt;*&gt; v .: "roles"
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org6aec1cb" class="outline-4">
+<h4 id="org6aec1cb"><span class="section-number-4">7.2.2</span> Jsonifying Session Datatype</h4>
+<div class="outline-text-4" id="text-7-2-2">
+<div class="org-src-container">
+<pre class="src src-haskell" id="org8d1dc38">instance FromJSON Session where
+  parseJSON = withObject "Session" $ \ v -&gt;
+    Session &lt;$&gt; v .: "userId"
+            &lt;*&gt; v .: "email"
+            &lt;*&gt; v .: "roles"
+
+instance ToJSON Session where
+  toJSON (Session sessionMappingToUser sessionEmail sessionRoles) =
+    object ["userId" .= sessionMappingToUser
+          , "email"  .= sessionEmail
+          , "roles"  .= sessionRoles]
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org5e782dc" class="outline-4">
+<h4 id="org5e782dc"><span class="section-number-4">7.2.3</span> Jsonifying ResponseUserId Datatype</h4>
+<div class="outline-text-4" id="text-7-2-3">
+<div class="org-src-container">
+<pre class="src src-haskell" id="org2a27ace">instance FromJSON ResponseUserId where
+  parseJSON (Object o) =
+     ResponseUserId &lt;$&gt; o .: "UserId"
+
+instance ToJSON ResponseUserId where
+  toJSON (ResponseUserId value)  =
+    object ["UserId" .= value]
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org495b774" class="outline-4">
+<h4 id="org495b774"><span class="section-number-4">7.2.4</span> Jsonifying ResponseSessionId Datatype</h4>
+<div class="outline-text-4" id="text-7-2-4">
+<div class="org-src-container">
+<pre class="src src-haskell" id="org11a30d8">instance FromJSON ResponseSessionId where
+  parseJSON (Object o) =
+     ResponseSessionId &lt;$&gt; o .: "SessionId"
+
+instance ToJSON ResponseSessionId where
+  toJSON (ResponseSessionId value) =
+    object ["SessionId" .= value]
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org3aac43d" class="outline-2">
+<h2 id="org3aac43d"><span class="section-number-2">8</span> Tangling</h2>
+<div class="outline-text-2" id="text-8">
+<div class="org-src-container">
+<pre class="src src-haskell" id="org5197ccd">&lt;&lt;extns_and_imports&gt;&gt;
+&lt;&lt;database_models&gt;&gt;
+&lt;&lt;unique_user_data&gt;&gt;
+&lt;&lt;update_user_data&gt;&gt;
+&lt;&lt;response_user_id&gt;&gt;
+&lt;&lt;response_session_id&gt;&gt;
+&lt;&lt;email_from_session&gt;&gt;
+&lt;&lt;from_uniqueuserdata_to_text&gt;&gt;
+&lt;&lt;jsonify_user&gt;&gt;
+&lt;&lt;jsonify_session&gt;&gt;
+&lt;&lt;jsonify_user_id&gt;&gt;
+&lt;&lt;jsonify_session_id&gt;&gt;
+</pre>
+</div>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="author">Author: Atreyee</p>
+<p class="date">Created: 2017-06-30 Fri 10:21</p>
+<p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>

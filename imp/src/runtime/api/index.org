@@ -1,8 +1,17 @@
-#+TITLE: Integration Of Componenets For User Directory Application
+#+TITLE: REST API Definitions for App
+#+AUTHOR: Atreyee Ghosal
 
 
-The =app= package holds two modules:
 
-  - [[file:App.org][App]]
+The =Api= package contains the definitions for the routes that form the REST
+interface for the application.
 
-  - [[file:Main.org][Main]]
+The package contains the following components:
+
+  - [[file:NonSecureRoutes.org][NonSecureApi]] : routes that can be accessed by all users
+
+  - [[file:NonAdminApi.org][NonAdminApi]] : routes that can only be accessed by logged-in users
+
+  - [[file:AdminApi.org][AdminApi]] : routes that can only be accessed by users logged-in with role =Admin=
+
+  - [[file:Api.org][Api]] : consolidation of all the above routes

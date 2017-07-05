@@ -22,6 +22,7 @@ The datatypes used in the system are defined here.
 module Models where
 import Data.Aeson
 import Data.Text
+import Web.HttpApiData
 
 import Role
 
@@ -53,6 +54,7 @@ import Database.Persist.TH
 import GHC.Generics
 import Data.Aeson
 import Data.Text
+import Web.HttpApiData
 
 data Role = Admin | NonAdmin
   deriving (Generic, Show, Read, Eq)
@@ -71,7 +73,18 @@ instance FromJSON Role where
 -- storing this datatype as a PersistField type
 derivePersistField "Role"
 
-  
+
+-- deriving a FromHttpApiData instance for this
+instance FromHttpApiData Role where
+ -- parseQueryParam :: Text -> Either Text Role
+  parseQueryParam role = Right (read $ unpack role)
+      
+
+-- deriving a ToHttpApiData instance for this
+instance ToHttpApiData Role where
+--  toQueryParam :: Role -> Text
+  toQueryParam role = pack (show role)
+      
 
 #+END_SRC
 * Database Models
@@ -88,13 +101,13 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 User
   name String
   email String
-  roles Role
+  roles [Role]
   UniqueEmail email
   deriving Eq Read Show
 Session
   userMappingToSession UserId
   userEmail String
-  userRoles Role
+  userRoles [Role]
   UniqueSessionDetails userEmail userRoles
   deriving Eq Read Show
 |]
@@ -180,10 +193,36 @@ data ResponseSessionId = ResponseSessionId {
 
 
 #+END_SRC
-* Datatype Work 
+** ShowUserData
 
+#+NAME: show_user_data
+#+BEGIN_SRC haskell
+
+data ShowUserData = ShowUserData {
+                                 showUserName  :: String,
+                                 showUserEmail :: String
+                                 } deriving (Show, Read, Eq)
+
+
+instance ToJSON ShowUserData where
+  toJSON (ShowUserData showUserName showUserEmail) =
+    object ["name"  .= showUserName,
+            "email" .= showUserEmail]
+
+
+instance FromJSON ShowUserData where
+  parseJSON = withObject "ShowUserData" $ \ v ->
+    ShowUserData <$> v .: "name"
+                   <*> v .: "email"
+
+
+-- function that extracts ShowUserData from User 
+toShowUserData :: User -> ShowUserData
+toShowUserData (User userName userEmail userRoles) = ShowUserData userName userEmail
+
+#+END_SRC
+* Datatype Work
 ** Converting To And From Route Datatypes
-
 *** Extracting =sessionUserEmail= from =Session=
 
 #+NAME: email_from_session
@@ -285,6 +324,7 @@ instance ToJSON ResponseSessionId where
 <<update_user_data>>
 <<response_user_id>>
 <<response_session_id>>
+<<show_user_data>>
 <<email_from_session>>
 <<from_uniqueuserdata_to_text>>
 <<jsonify_user>>

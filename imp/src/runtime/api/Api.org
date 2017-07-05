@@ -1,4 +1,4 @@
-#+TITLE: Example Servant App
+#+TITLE: Consolidated API 
 
 
 * Introduction
@@ -7,7 +7,7 @@ Defines the routes used to interact with the system =User Directory=, and
 combines them into an API.
 
 The behaviour of the API - ie: it's structure, request arguments and return
-values - is implemented using types and combinators. 
+values - is implemented using types. 
 
 * Language Extensions and Imports 
 

@@ -1,0 +1,36 @@
+#+TITLE: Sitemap for project org-docs
+
+   + org-templates
+     + [[file:org-templates/level-0.org][level-0]]
+     + [[file:org-templates/level-1.org][level-1]]
+     + [[file:org-templates/level-2.org][level-2]]
+     + [[file:org-templates/level-3.org][level-3]]
+     + [[file:org-templates/level-4.org][level-4]]
+     + [[file:org-templates/level-5.org][level-5]]
+     + [[file:org-templates/tex-macros.org][tex-macros]]
+   + runtime
+     + api
+       + [[file:runtime/api/NonSecureRoutes.org][Api Routes Not Protected By Auth]]
+       + [[file:runtime/api/AdminApi.org][Api Routes Protected By Admin Auth]]
+       + [[file:runtime/api/NonAdminApi.org][Api Routes Protected By NonAdmin Auth]]
+       + [[file:runtime/api/Api.org][Example Servant App]]
+       + [[file:runtime/api/index.org][Integration Of Componenets For User Directory Application]]
+     + app
+       + [[file:runtime/app/index.org][API For User Directory Application]]
+       + [[file:runtime/app/App.org][App]]
+       + [[file:runtime/app/Main.org][Main Module]]
+     + authentication
+       + [[file:runtime/authentication/Authentication.org][Authentication Function for App]]
+       + [[file:runtime/authentication/index.org][Authentication Functions For User Directory Application]]
+     + controllers
+       + [[file:runtime/controllers/index.org][Controllers For User Directory Application]]
+       + [[file:runtime/controllers/Controllers.org][Controllers For User Directory Webapp]]
+     + models
+       + [[file:runtime/models/models.org][Models - Using Persistent Database]]
+       + [[file:runtime/models/index.org][Models For User Directory Application]]
+     + [[file:runtime/index.org][Runtime of Application]]
+   + test
+     + [[file:test/Spec.org][Spec]]
+     + [[file:test/UnauthorisedSpec.org][Test Suite For Login/Admin Authorisation]]
+     + [[file:test/AppSpec.org][Test Suite For Web-App-Haskell]]
+   + [[file:index.org][Building a Web Application in Haskell]]

@@ -57,6 +57,7 @@ executable web-app-haskell
                      , generic-deriving
                      , yesod
                      , resourcet
+                     , http-api-data
 
   default-language:    Haskell2010
 
@@ -113,6 +114,7 @@ test-suite web-app-haskell-test
                      , resourcet
                      , mockery
                      , transformers
+                     , http-api-data
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010
 

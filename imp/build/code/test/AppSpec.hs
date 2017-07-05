@@ -38,12 +38,12 @@ import Test.QuickCheck
 
 
 -- to create a value of Session datatype
-createSession :: Integer -> String -> Role -> Session
+createSession :: Integer -> String -> [Role] -> Session
 createSession id email role = Session (toSqlKey $ fromInteger id) email role
 
 
 -- to create a value of User datatype
-createUser :: String -> String -> Role -> User
+createUser :: String -> String -> [Role] -> User
 createUser name email role = User name email role
 
 
@@ -57,37 +57,64 @@ userResponse :: Integer -> Maybe ResponseUserId
 userResponse x = Just $ ResponseUserId (toSqlKey $ fromInteger x)
 
 
+-- to create a value of UpdateUserData datatype
+updateData :: String -> String -> UpdateUserData
+updateData old new = UpdateUserData old new
+
+
 -- data for user admin-user
 adminOneData :: User
-adminOneData = createUser "admin-user" "admin@email.com" Admin
+adminOneData = createUser "admin-user" "admin@email.com" [Admin]
 
 
 -- session for user admin-user
 adminOneSession :: Session
-adminOneSession = createSession 1 "admin@email.com" Admin
+adminOneSession = createSession 1 "admin@email.com" [Admin]
 
 
 -- user to add
 userOneData :: User
-userOneData = createUser "small-cat" "small@cat.com" NonAdmin
+userOneData = createUser "small-cat" "small@cat.com" [NonAdmin]
 
+
+-- user data with same email as userOneData
+repUserOneData :: User
+repUserOneData = createUser "smaller-cat" "small@cat.com" [Admin]
+-- userOneData after /setName operation
+userOneNewNameData :: User
+userOneNewNameData = createUser "warm-kitty" "small@cat.com" [NonAdmin]
+
+-- userOneData after /setEmail operation
+userOneNewEmailData :: User
+userOneNewEmailData = createUser "small-cat" "warm@kitty.com" [NonAdmin]
+
+-- userOneData after /addRole operation
+userOneNewRolesData :: User
+userOneNewRolesData = createUser "small-cat" "small@cat.com" [NonAdmin, Admin]
 
 -- session for user small-cat
 userOneSession :: Session
-userOneSession = createSession 2 "small@cat.com" NonAdmin
+userOneSession = createSession 2 "small@cat.com" [NonAdmin]
 
 
 -- another user to add
 userTwoData :: User
-userTwoData = createUser "large-cat" "large@cat.com" NonAdmin
+userTwoData = createUser "large-cat" "large@cat.com" [NonAdmin]
  
 -- query function types
 testIndex :: ClientM Text
 testLogin :: Session -> ClientM (Maybe (ResponseSessionId))
-testShowUsers :: Maybe (String) ->  ClientM [User]
+testShowUsers :: Maybe (String) ->  ClientM [ShowUserData]
 testAddUser :: Maybe (String) -> User -> ClientM (Maybe (ResponseUserId))
 testDeleteUser :: Maybe (String) -> UniqueUserData -> ClientM (Maybe (User))
 testLogout :: Maybe (String) -> Session -> ClientM (Maybe (Session))
+testSetName :: Maybe (String) -> UpdateUserData -> ClientM (Maybe (User))
+testSetEmail :: Maybe (String) -> UpdateUserData -> ClientM (Maybe (User))
+testShowUserDetails :: Maybe (String) -> String -> ClientM (Maybe (User))
+testShowSessions :: Maybe (String) -> ClientM ([Session])
+testShowRoles :: Maybe (String) -> String -> ClientM ([Role])
+testAddRole :: Maybe (String) -> String -> Role -> ClientM (Maybe (User))
+testDeleteRole :: Maybe (String) -> String -> Role -> ClientM (Maybe (User))
 
 
 -- a proxy to our API
@@ -96,16 +123,39 @@ userAPI = Data.Proxy.Proxy
 
 
 -- code that returns the client functions for our API
-(testIndex :<|> testLogin) :<|> (testLogout) :<|> (testShowUsers :<|> testAddUser :<|> testDeleteUser) = client userAPI 
+(testIndex :<|>  testLogin) :<|> (testShowUsers :<|> testLogout :<|> testSetName :<|> testSetEmail) :<|> (testShowUserDetails :<|> testAddUser :<|> testDeleteUser :<|> testShowSessions :<|> testShowRoles :<|> testAddRole :<|> testDeleteRole) = client userAPI 
 
+ 
 spec :: Spec
 spec = do
+  indexTests
+  loginTests
+  addUserTests
+  deleteUserTests
+  showUsersTests
+  logoutTests
+  setNameTests
+  setEmailTests
+  showUserDetailsTests
+  showSessionsTests
+  showRolesTests
+  addRoleTests
+  deleteRoleTests
+
+indexTests :: Spec
+indexTests = do
   around withApp $ do
-
-
+    
     describe "/index" $ do
       it "Returns value from Index page" $ \ port -> do
         (tryQuery port testIndex) `shouldReturn` pack("Welcome to User Directory")
+
+
+
+loginTests :: Spec
+loginTests = do
+  
+  around withApp $ do
 
 
     describe "/login" $ do
@@ -113,34 +163,83 @@ spec = do
       it "Operates successfully" $ \ port -> do
         (tryQuery port $ testLogin adminOneSession) `shouldReturn` (sessionResponse 1)
 
-      it "Attempts to login an user not in the system" $ \ port -> do
-        (tryQuery port $ testLogin userOneSession) `shouldReturn` Nothing
+
+      it "Cannot login an user not in the system" $ \ port -> do
+        (tryQuery port $ testLogin userOneSession) `shouldThrow` anyException
+
+
+      it "Cannot login user with role that user does not have" $ \ port -> do
+        (tryQuery port $ testLogin (createSession 1 "admin@email.com" [NonAdmin])) `shouldThrow` anyException
+
+
+      it "Logs in an user twice with different roles" $ \ port -> do
+        -- logs in an user with Admin role
+        tryQuery port $ testLogin adminOneSession
+        -- adds NonAdmin role to same user
+        tryQuery port $ testAddRole (Just "1") "admin@email.com" NonAdmin
+        -- logs in user again with NonAdmin role
+        (tryQuery port $ testLogin (createSession 1 "admin@email.com" [NonAdmin])) `shouldReturn` (sessionResponse 2)
+
+
+      it "Cannot login an user twice with the same role" $ \ port -> do
+        -- logs in an user with Admin role
+        tryQuery port $ testLogin adminOneSession
+        -- logs in user again with same role
+        (tryQuery port $ testLogin adminOneSession) `shouldThrow` anyException
+
+
+
+addUserTests :: Spec
+addUserTests = do
+  
+  around withApp $ do
         
 
     describe "/addUser" $ do
 
+      
       it "Operates successfully" $ \ port -> do
         -- login an Admin user who can add users
         tryQuery port $ testLogin adminOneSession
         -- adds an user
         (tryQuery port $ testAddUser (Just "1") userOneData) `shouldReturn` (userResponse 2)
 
+
       it "Only Admin user can add user" $ \ port -> do
         -- login Admin user "admin-user"
         tryQuery port $ testLogin adminOneSession
         -- add NonAdmin user using credentials of "admin-user"
         tryQuery port $ testAddUser (Just "1") userOneData 
-       -- login NonAdmin user "small-cat"
+        -- login NonAdmin user "small-cat"
         tryQuery port $ testLogin userOneSession
         -- test-add user using credentials of "small-cat"
         (tryQuery port $ testAddUser (Just "2") userTwoData) `shouldThrow` anyErrorCall
 
-      it "Adding user when Session is not present in database" $ \ port -> do
+
+      it "Adding user when not logged-in" $ \ port -> do
         (tryQuery port $ testAddUser (Just "1") userOneData) `shouldThrow` anyErrorCall
 
 
+      it "Cannot add two users with the same email" $ \ port -> do
+        -- logs in Admin user who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- adds user with email "small@cat.com"
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- adds another user with email "small@cat.com"
+        (tryQuery port $ testAddUser (Just "1") repUserOneData) `shouldThrow` anyErrorCall
+
+        
+
+
+
+deleteUserTests :: Spec
+deleteUserTests = do
+
+  around withApp $ do
+
     describe "/deleteUser" $ do
 
+      
       it "Deletes user successfully" $ \ port -> do
         -- to login "admin-user"
         tryQuery port $ testLogin adminOneSession
@@ -148,6 +247,7 @@ spec = do
         tryQuery port $ testAddUser (Just "1") userOneData
         -- to delete same user using credentials of "admin-user"
         (tryQuery port $ testDeleteUser (Just "1") (UniqueUserData "small@cat.com")) `shouldReturn` (Just userOneData)
+
 
       it "Only Admin user can delete user" $ \ port -> do
         -- login Admin user "admin-user"
@@ -159,11 +259,13 @@ spec = do
         -- test-delete user using credentials of "small-cat"
         (tryQuery port $ testDeleteUser (Just "2") (UniqueUserData "admin@email.com")) `shouldThrow` anyException
 
+
       it "Cannot delete oneself" $ \ port -> do
         -- login Admin user "admin-user"
         tryQuery port $ testLogin adminOneSession
         -- Admin user attempts to delete self
         (tryQuery port $ testDeleteUser (Just "1") (UniqueUserData "admin@email.com")) `shouldThrow` anyException
+
 
       it "Delete when Session not present in database" $ \ port -> do
         -- login Admin user "admin-user"
@@ -173,6 +275,20 @@ spec = do
         -- test delete user using credentials of non-logged-in user
         (tryQuery port $ testDeleteUser (Just "3") (UniqueUserData "admin@email.com")) `shouldThrow` anyException
 
+
+      it "Cannot delete an user not in the system" $ \ port -> do
+        -- login an Admin user who can delete users
+        tryQuery port $ testLogin adminOneSession
+        -- attempt to delete an user who is not in the database
+        (tryQuery port $ testDeleteUser (Just "1") (UniqueUserData "small@cat.com")) `shouldThrow` anyException
+
+
+
+showUsersTests :: Spec
+showUsersTests = do
+
+  around withApp $ do
+        
 
     describe "/showUsers" $ do
 
@@ -184,12 +300,19 @@ spec = do
         -- add user "large-cat"
         tryQuery port $ testAddUser (Just "1") userTwoData
         -- test-show all users using credentials of "admin-user"
-        (tryQuery port $ testShowUsers (Just "1")) `shouldReturn` [adminOneData, userOneData, userTwoData]
+        (tryQuery port $ testShowUsers (Just "1")) `shouldReturn` (Prelude.map toShowUserData [adminOneData, userOneData, userTwoData])
 
       it "Cannot access list of users when session not in database" $ \ port -> do
         (tryQuery port $ testShowUsers (Just "1")) `shouldThrow` anyException
-        
 
+
+
+logoutTests :: Spec
+logoutTests = do
+
+  
+  around withApp $ do
+   
     describe "/logout" $ do
 
       it "Logs out user successfully" $ \ port -> do
@@ -213,8 +336,390 @@ spec = do
         (tryQuery port $ testLogout (Just "2") adminOneSession) `shouldThrow` anyException
         
 
+
+
+
+setNameTests :: Spec
+setNameTests = do
+
+  around withApp $ do
+
+    describe "/setName" $ do
+
+      it "Sets the name of an user successfully using Admin auth" $ \ port -> do
+
+        -- login an Admin user who can add users
+        tryQuery port $ (testLogin adminOneSession)
+        -- adds an user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- sets the name of the user
+        (tryQuery port $ testSetName (Just "1") (updateData "small-cat" "warm-kitty")) `shouldReturn` (Just userOneNewNameData)
+
+
+      it "Sets the name of user == self successfully using NonAdmin auth" $ \ port -> do
+        
+        -- login an Admin user who can add users
+        tryQuery port $ (testLogin adminOneSession)
+        -- adds an user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- login a NonAdmin user
+        tryQuery port $ (testLogin userOneSession)
+        -- set the name of NonAdmin user
+        (tryQuery port $ testSetName (Just "2") (updateData "small-cat" "warm-kitty")) `shouldReturn` (Just userOneNewNameData)
+
+
+      it "Cannot set name when user not logged in" $ \ port -> do
+        
+        -- login an Admin user who can add users
+        tryQuery port $ (testLogin adminOneSession)
+        -- adds an user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- sets the name of user
+        (tryQuery port $ testSetName (Just "2") (updateData "small-cat" "warm-kitty")) `shouldThrow` anyException
+
+
+      it "Cannot set name of another user without Admin auth" $ \ port -> do
+
+        -- login an Admin user who can add users
+        tryQuery port $ (testLogin adminOneSession)
+        -- adds an user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- logs in a NonAdmin user
+        tryQuery port $ testLogin userOneSession
+        -- tries to change name of first user
+        (tryQuery port $ testSetName (Just "2") (updateData "admin-user" "admin-cat")) `shouldThrow` anyException
+
+
+      it "Cannot set name of an user not in the system" $ \ port -> do
+        -- logs in Admin user who can set name of user
+        tryQuery port $ testLogin adminOneSession
+        -- attempts to set name of user who is not in the system
+        (tryQuery port $ testSetName (Just "1") (updateData "small-cat" "large-cat")) `shouldThrow` anyException
+
         
         
+        
+
+setEmailTests :: Spec
+setEmailTests = do
+
+  around withApp $ do
+
+    describe "/setEmail" $ do
+
+      it "Sets the email of an user successfully using Admin auth" $ \ port -> do
+
+        -- login an Admin user who can add users
+        tryQuery port $ (testLogin adminOneSession)
+        -- adds an user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- sets the email of the user
+        (tryQuery port $ testSetEmail (Just "1") (updateData "small@cat.com" "warm@kitty.com")) `shouldReturn` (Just userOneNewEmailData)
+
+
+      it "Sets the name of user == self successfully using NonAdmin auth" $ \ port -> do
+        
+        -- login an Admin user who can add users
+        tryQuery port $ (testLogin adminOneSession)
+        -- adds an user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- login a NonAdmin user
+        tryQuery port $ (testLogin userOneSession)
+        -- set the email of NonAdmin user
+        (tryQuery port $ testSetEmail (Just "2") (updateData "small@cat.com" "warm@kitty.com")) `shouldReturn` (Just userOneNewEmailData)
+
+
+      it "Cannot set name when user not logged in" $ \ port -> do
+        
+        -- login an Admin user who can add users
+        tryQuery port $ (testLogin adminOneSession)
+        -- adds an user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- sets the email of user
+        (tryQuery port $ testSetEmail (Just "2") (updateData "small@cat.com" "warm@kitty.com")) `shouldThrow` anyException
+
+
+      it "Cannot set name of another user without Admin auth" $ \ port -> do
+
+        -- login an Admin user who can add users
+        tryQuery port $ (testLogin adminOneSession)
+        -- adds an user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- logs in a NonAdmin user
+        tryQuery port $ testLogin userOneSession
+        -- tries to change email of first user
+        (tryQuery port $ testSetEmail (Just "2") (updateData "admin@email.com" "admin@cat.com")) `shouldThrow` anyException
+
+
+      it "Cannot set email of an user not in the system" $ \ port -> do
+        -- logs in Admin user who can set email of user
+        tryQuery port $ testLogin adminOneSession
+        -- attempts to set email of user who is not in the system
+        (tryQuery port $ testSetEmail (Just "1") (updateData "small@cat.com" "large@cat.com")) `shouldThrow` anyException
+
+
+        
+        
+        
+
+showUserDetailsTests :: Spec
+showUserDetailsTests = do
+
+  around withApp $ do
+
+    describe "/showUserDetails" $ do
+
+      it "Successfully fetches the details of an user" $ \ port -> do
+
+        -- logs in Admin user
+        tryQuery port $ testLogin adminOneSession
+        -- Admin user adds an user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- admin user fetches the details of the user
+        (tryQuery port $ testShowUserDetails (Just "1") "small@cat.com") `shouldReturn` (Just userOneData)
+
+
+      it "Non-logged-in user cannot fetch details of an user" $ \ port -> do
+        (tryQuery port $ testShowUserDetails (Just "1") "admin@email.com") `shouldThrow` anyException
+
+
+      it "Non-admin user cannot fetch details of an user" $ \ port -> do
+
+        -- log in Admin user who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- Admin user adds an user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- log in NonAdmin user who cannot fetch user details
+        tryQuery port $ testLogin userOneSession
+        -- NonAdmin user attempts to fetch details of an user
+        (tryQuery port $ testShowUserDetails (Just "2") "admin@email.com") `shouldThrow` anyException
+
+
+      it "Cannot fetch the details of an user not in the system" $ \ port -> do
+
+          -- log in Admin user who can fetch user details
+          tryQuery port $ testLogin adminOneSession
+          -- Admin user attempts to fetch details of an user who is not in the system
+          (tryQuery port $ testShowUserDetails (Just "1") "small@cat.com") `shouldThrow` anyException
+        
+
+
+showSessionsTests :: Spec
+showSessionsTests = do
+
+  around withApp $ do
+
+    describe "/showSessions" $ do
+
+      
+      it "Successfully shows all sessions present in the database" $ \ port -> do
+
+        -- logs in user "admin-user"
+        tryQuery port $ testLogin adminOneSession
+        -- adds user "small-cat"
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- logs in user "small-cat"
+        tryQuery port $ testLogin userOneSession
+        -- fetches all sessions present in the database
+        (tryQuery port $ testShowSessions (Just "1")) `shouldReturn` [adminOneSession, userOneSession]
+
+
+      it "Throws error when non-logged-in user tries to view sessions" $ \ port -> do
+        (tryQuery port $ testShowSessions (Just "1")) `shouldThrow` anyException
+
+
+      it "Throws error when NonAdmin user tries to view sessions" $ \ port -> do
+
+        -- logs in Admin user who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- add a NonAdmin user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- logs in NonAdmin user
+        tryQuery port $ testLogin userOneSession
+        -- attempts to view sessions with NonAdmin auth
+        (tryQuery port $ testShowSessions (Just "2")) `shouldThrow` anyException
+
+        
+
+
+
+showRolesTests :: Spec
+showRolesTests = do
+
+  around withApp $ do
+
+    describe "/showRoles" $ do
+
+      
+      it "Successfully shows roles of an user present in the database" $ \ port -> do
+
+        -- logs in user "admin-user"
+        tryQuery port $ testLogin adminOneSession
+        -- adds user "small-cat"
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- logs in user "small-cat"
+        tryQuery port $ testLogin userOneSession
+        -- fetches all roles of the user
+        (tryQuery port $ testShowRoles (Just "1") "small@cat.com") `shouldReturn` [NonAdmin]
+
+
+      it "Throws error when non-logged-in user tries to view roles" $ \ port -> do
+        (tryQuery port $ testShowRoles (Just "1") "admin@email.com") `shouldThrow` anyException
+
+
+      it "Throws error when NonAdmin user tries to view roles" $ \ port -> do
+
+        -- logs in Admin user who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- add a NonAdmin user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- logs in NonAdmin user
+        tryQuery port $ testLogin userOneSession
+        -- attempts to view roles with NonAdmin auth
+        (tryQuery port $ testShowRoles (Just "2") "admin@email.com") `shouldThrow` anyException
+
+
+      it "Cannot fetch roles of an user who is not in the database" $ \ port -> do
+
+        -- logs in Admin user who can fetch roles
+        tryQuery port $ testLogin adminOneSession
+        -- tries to fetch roles of an user who is not in the database
+        (tryQuery port $ testShowRoles (Just "1") "small@cat.com") `shouldThrow` anyException
+        
+
+
+addRoleTests :: Spec
+addRoleTests = do
+
+  around withApp $ do
+
+    describe "/addRole" $ do
+
+
+      it "Successfully adds role to an user" $ \ port -> do
+
+        -- logs in Admin user who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- adds a NonAdmin user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- add role Admin to user
+        (tryQuery port $ testAddRole (Just "1") "small@cat.com" Admin) `shouldReturn` (Just userOneNewRolesData)
+
+
+      it "Cannot add role to user when not logged in" $ \ port -> do
+
+        -- logs in Admin user who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- adds a NonAdmin user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- attempts to add role to "admin-user" when not logged in
+        (tryQuery port $ testAddRole (Just "2") "admin@email.com" NonAdmin) `shouldThrow` anyException
+
+
+      it "Cannot add role to user when not logged in as Admin" $ \ port -> do
+        -- logs in Admin user who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- adds a NonAdmin user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- logs in NonAdmin user
+        tryQuery port $ testLogin userOneSession
+        -- attempts to add role to "admin-user" when logged in as NonAdmin
+        (tryQuery port $ testAddRole (Just "2") "admin@email.com" NonAdmin) `shouldThrow` anyException
+
+
+      it "Cannot add duplicate role to user" $ \ port -> do
+        -- logs in Admin user who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- adds a NonAdmin user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- attempts to add NonAdmin role to user "small-cat"
+        (tryQuery port $ testAddRole (Just "1") "small@cat.com" NonAdmin) `shouldThrow` anyException
+
+
+      it "Cannot add role to user that does not exist in database" $ \ port -> do
+        -- logs in Admin user who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- attempts to add Admin role to nonexistent user
+        (tryQuery port $ testAddRole (Just "1") "small@cat.com" Admin) `shouldThrow` anyException
+
+
+        
+        
+
+
+deleteRoleTests :: Spec
+deleteRoleTests = do
+
+  around withApp $ do
+
+    describe "/deleteRole" $ do
+
+
+      it "Successfully deletes role from an user" $ \ port -> do
+
+        -- logs in Admin user who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- adds a NonAdmin user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- add role Admin to user
+        tryQuery port $ testAddRole (Just "1") "small@cat.com" Admin
+        -- deletes role Admin from user
+        (tryQuery port $ testDeleteRole (Just "1") "small@cat.com" Admin) `shouldReturn` (Just userOneData)
+
+
+      it "Cannot delete role from user when not logged in" $ \ port -> do
+
+        -- logs in Admin user "admin-user" who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- adds a NonAdmin user "small-cat"
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- adds role Admin to NonAdmin user "small-cat"
+        tryQuery port $ testAddRole (Just "1") "small@cat.com" Admin
+        -- user "admin-user" logs out
+        tryQuery port $ testLogout (Just "1") adminOneSession
+        -- attempt to delete role from user when not logged in
+        (tryQuery port $ testDeleteRole (Just "1") "small@cat.com" Admin) `shouldThrow` anyException
+
+
+      it "Cannot delete role from user when not logged in as Admin" $ \ port -> do
+        
+        -- logs in Admin user "admin-user" who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- adds a NonAdmin user "small-cat"
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- adds role NonAdmin to Admin user "admin-user"
+        tryQuery port $ testAddRole (Just "1") "admin@email.com" NonAdmin
+        -- NonAdmin user "small-cat" logs in
+        tryQuery port $ testLogin userOneSession
+        -- attempt to delete role from user when logged in as NonAdmin user
+        (tryQuery port $ testDeleteRole (Just "2") "admin@email.com" NonAdmin) `shouldThrow` anyException
+
+
+      it "Cannot delete nonexistent role to user" $ \ port -> do
+        -- logs in Admin user who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- adds a NonAdmin user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- attempts to delete Admin role from user "small-cat"
+        (tryQuery port $ testDeleteRole (Just "1") "small@cat.com" Admin) `shouldThrow` anyException
+
+
+      it "Cannot delete role from user that does not exist in database" $ \ port -> do
+        -- logs in Admin user who can delete roles
+        tryQuery port $ testLogin adminOneSession
+        -- attempts to delete Admin role from nonexistent user
+        (tryQuery port $ testDeleteRole (Just "1") "small@cat.com" NonAdmin) `shouldThrow` anyException
+
+
+      it "Cannot delete role when user only has single role" $ \ port -> do
+        -- logs in Admin user who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- adds a NonAdmin user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- attempts to delete NonAdmin role from user "small-cat"
+        (tryQuery port $ testDeleteRole (Just "1") "small@cat.com" NonAdmin) `shouldThrow` anyException
+
+
 
 withApp :: (Int -> IO a) -> IO a
 withApp action =

@@ -28,29 +28,21 @@ import           Api
 import           Models
 import           Role
 
--- All authentication-related values are prefixed with auth-
-  
 
--- | utility function to convert a string to an int
 toInt :: String -> Int
 toInt str = read str
 
 
--- | utility function to convert String value to SessionId
 toSessionId :: String -> SessionId
 toSessionId val = toSqlKey $ fromIntegral $ toInt val
 
 
--- | To return sessionId value if header exists
--- | and return 0 if header does not exist
 headerCheck :: Maybe String -> String
 headerCheck authVal = case authVal of
     Nothing -> "0"
     Just value -> value
-    
 
--- | To return True if user is logged in
--- | and False if user is not logged in
+      
 loginCheck :: ConnectionPool -> String -> IO Bool
 loginCheck pool authSessionId = flip runSqlPersistMPool pool $ do
   isLoggedIn <- get $ toSessionId authSessionId
@@ -59,49 +51,64 @@ loginCheck pool authSessionId = flip runSqlPersistMPool pool $ do
     Just _ -> return True
 
 
--- | To check if logged-in user is admin
 adminAuthCheck :: ConnectionPool -> String -> IO Bool
 adminAuthCheck pool authSessionId = flip runSqlPersistMPool pool $ do
   roleOfLoggedInUser <- get $ toSessionId authSessionId
   case roleOfLoggedInUser of
     Nothing -> return False
-    Just roleValue -> case (sessionUserRoles roleValue) of 
-                        NonAdmin -> return False
-                        Admin    -> return True
+    Just roleValue -> case (sessionUserRoles roleValue) of  
+                        [NonAdmin] -> return False
+                        [Admin]    -> return True
 
-
--- | to check if logged-in user is same as user passed to the function
 isSelfCheck :: ConnectionPool -> String -> String -> IO Bool
 isSelfCheck pool userData authSessionId = flip runSqlPersistMPool pool $ do
   roleOfLoggedInUser <- get $ toSessionId authSessionId
   case roleOfLoggedInUser of
     Nothing -> return False
-    Just roleValue -> if (((sessionUserEmail roleValue) == userData) || ((sessionUserName roleValue) == userData))
+    Just roleValue -> if (((sessionUserEmail roleValue) == userData))
                         then return True
                         else return False
-                        
 
--- | to check if logged-in user is either admin or same as user passed to the function
+
 isEitherAdminOrSelfCheck :: ConnectionPool -> String -> String -> IO Bool
 isEitherAdminOrSelfCheck pool userData authSessionId = flip runSqlPersistMPool pool $ do
   roleOfUser <- get $ toSessionId authSessionId
   case roleOfUser of
     Nothing -> return False
     Just xs -> case (sessionUserRoles xs) of
-      Admin -> return True
-      NonAdmin -> if ((sessionUserEmail xs) == userData) || ((sessionUserName xs) == userData)
+      [Admin] -> return True
+      [NonAdmin] -> if ((sessionUserEmail xs) == userData) 
         then return True
-        else return False
+        else do
+          userEntity <- selectFirst [UserEmail ==. (sessionUserEmail xs)] []
+          case (entityVal <$> userEntity) of
+            Nothing -> return False
+            Just x -> if ((userName x) == userData)
+                      then return True
+                      else return False
   
 
--- | to check if user passed to the function is logged-in admin and not self
 isNotAdminSelfCheck :: ConnectionPool -> Text -> String -> IO Bool
 isNotAdminSelfCheck pool userData authSessionId = flip runSqlPersistMPool pool $ do
   roleOfLoggedInUser <- get $ toSessionId authSessionId
   case roleOfLoggedInUser of
     Nothing -> return False
     Just roleValue -> case (sessionUserRoles roleValue) of
-                        NonAdmin -> return False
-                        Admin -> if ((sessionUserEmail roleValue) == unpack(userData))
+                        [NonAdmin] -> return False
+                        [Admin] -> if ((sessionUserEmail roleValue) == unpack(userData))
                                    then return False
                                    else return True
+
+
+hasRole :: ConnectionPool -> Session -> IO (Bool)
+hasRole pool session = flip runSqlPersistMPool pool $ do
+  user <- selectFirst [UserEmail ==. (sessionUserEmail session)] []
+  case user of
+    Nothing -> return False
+    Just xs -> let
+                 roles = userRoles $ entityVal xs
+                 sessionRole = Prelude.head (sessionUserRoles session)
+               in
+                 if (sessionRole `elem` roles)
+                 then return True
+                 else return False

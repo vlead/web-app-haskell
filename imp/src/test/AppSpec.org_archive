@@ -1,0 +1,46 @@
+#    -*- mode: org -*-
+
+
+Archived entries from file /home/atreyee/Internship-2017-Public/web-app-haskell/imp/src/test/AppSpec.org
+
+
+* Tests for =/setName= route
+  :PROPERTIES:
+  :ARCHIVE_TIME: 2017-07-04 Tue 10:49
+  :ARCHIVE_FILE: ~/Internship-2017-Public/web-app-haskell/imp/src/test/AppSpec.org
+  :ARCHIVE_CATEGORY: AppSpec
+  :END:
+
+#+NAME: set_name_tests
+#+BEGIN_SRC haskell
+
+setNameTests :: Spec
+setNameTests = do
+
+  around withApp $ do
+
+    describe "/setName" $ do
+
+      it "Sets the name of an user successfully using Admin auth" $ \ port -> do
+
+        -- login an Admin user who can add users
+        tryQuery port $ (testLogin adminOneSession)
+        -- adds an user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- sets the name of the user
+        (tryQuery port $ testSetName (Just "1") (updateData "small-cat" "warm-kitty")) `shouldReturn` (Just userOneNewNameData)
+
+
+      it "Sets the name of user == self successfully using NonAdmin auth" $ \ port -> do
+        
+        -- login an Admin user who can add users
+        tryQuery port $ (testLogin adminOneSession)
+        -- adds an user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- login a NonAdmin user
+        tryQuery port $ (testLogin userOneSession)
+        -- set the name of NonAdmin user
+        (tryQuery port $ testSetName (Just "2") (updateData "small-cat" "warm-kitty")) `shouldReturn` (just userOneNewNameData)
+
+
+#+END_SRC
