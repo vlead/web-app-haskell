@@ -1,0 +1,27 @@
+#+TITLE: Notes For Comparision Study
+
+ 
+* Number of Words
+
+** Number of words- Haskell
+
+Measured in words.
+
+*** Total: 1,205 lines of code
+*** Total: 13,589 words
+
+** Number of words- Python: 61511
+* Type-Safety
+
+The python program employs predicate checks to ensure that input/output data,
+as well as data passed within the program, is correctly formed.
+
+Haskell abstracts out the notion of predicate checks via the type system.
+* Documentation
+
+Haskell libraries are poorly documented compared to Python's.
+* Checks that are not abstracted by types
+
+Checks on data that are of the same type (for eg: checking that user input to
+function is not the same as logged-in user) are not abstracted away by the type
+system in Haskell.

@@ -1,0 +1,97 @@
+#+TITLE: Tests For User Directory Application (Revised)
+#+AUTHOR: Atreyee Ghosal
+
+
+* index
+
+*** Successful operation
+
+* showUsers
+
+*** Successful Operation
+*** Access without login
+
+* addUser
+  
+*** Successful Operation
+*** Access without login
+*** Access by nonadmin user
+*** Adding two users with the same email
+
+* deleteUser
+
+*** Successful operation
+*** Access without login
+*** Access by nonadmin user
+*** Deleting an user not present in the database
+*** Deleting self
+
+* login
+
+*** Successful Operation
+*** Logging in an user with a role that does not belong to the user
+*** Logging in an user not present in the database
+*** Logging in an user twice with the same role
+*** Logging in an user twice with different role
+
+* logout
+
+*** Successful Operation
+*** Access without login
+*** Logging out an user who is not logged-in :SolvedWithoutTests
+
+Solved by (a) cannot log out nonself, (b) cannot access without login
+*** Logging out an user not present in the database :SolvedWithoutTests
+*** Logging out an user who is not self
+* setName
+
+*** Successful Operation - Admin user who is not self
+*** Successful Operation - NonAdmin user who is self
+*** Access without login
+*** Set name of an user who is not in the database
+*** Access by nonadmin user who is not self
+* setEmail
+
+
+*** Successful Operation - Admin user who is not self
+*** Successful Operation - NonAdmin user who is self
+*** Access without login
+*** Set email of an user who is not in the database
+*** Access by nonadmin user who is not self
+
+* showUserDetails
+
+*** Successful Operation
+*** Access without login
+*** Access by nonadmin user
+*** Requesting details of an user not in the system
+* showSessions
+
+*** Successful Operation
+*** Access without login
+*** Access by nonadmin user
+
+* showRoles
+
+*** Successful Operation
+*** Show roles of an user who is not in the database
+*** Access without login
+*** Access by nonadmin user
+
+* addRole
+
+*** Successful Operation
+*** Access without login
+*** Access by nonadmin user
+*** Adds an already existing role to user
+*** Adds role to an user that does not exist in database
+
+* deleteRole
+
+*** Successful Operation
+*** Access without login
+*** Access by nonadmin user
+*** Deletes a role that does not exist for user
+*** Deletes role for user not in system
+*** Cannot delete role from user with single role
+* Additional: >= 1 admin user present in system :SolvedWithoutTests

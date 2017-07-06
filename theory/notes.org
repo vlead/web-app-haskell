@@ -195,7 +195,7 @@ get back to sir!!!
   - Email Prof. Soma for (a) More material on computational semantics, and (b)
     This dependency grammar stuff. Try to arrange a meeting with her, if possible?
 * Related Literature
-
+  
 - Press On - HCI
   
 ** Comparative study on programming languages
