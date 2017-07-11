@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2017-06-30 Fri 10:21 -->
+<!-- 2017-07-06 Thu 16:45 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Test Suite For Web-App-Haskell</title>
@@ -179,6 +179,80 @@
   .org-svg { width: 90%; }
   /*]]>*/-->
 </style>
+<link rel="stylesheet" type="text/css" href="./style/css/worg-style.css" />
+<link rel="stylesheet" type="text/css" href="./style/css/override.css" />
+<link rel="icon" type="image/png" href="./style/img/favicon/popl.png" />
+<script type="text/javascript" src="./style/js/org-info.js">
+/**
+ *
+ * @source: ./style/js/org-info.js
+ *
+ * @licstart  The following is the entire license notice for the
+ *  JavaScript code in ./style/js/org-info.js.
+ *
+ * Copyright (C) 2012-2013 Free Software Foundation, Inc.
+ *
+ *
+ * The JavaScript code in this tag is free software: you can
+ * redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GNU GPL) as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.  The code is distributed WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+ *
+ * As additional permission under GNU GPL version 3 section 7, you
+ * may distribute non-source (e.g., minimized or compacted) forms of
+ * that code without the copy of the GNU GPL normally required by
+ * section 4, provided you include this license notice and a URL
+ * through which recipients can access the Corresponding Source.
+ *
+ * @licend  The above is the entire license notice
+ * for the JavaScript code in ./style/js/org-info.js.
+ *
+ */
+</script>
+
+<script type="text/javascript">
+
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2013 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+
+<!--/*--><![CDATA[/*><!--*/
+org_html_manager.set("TOC_DEPTH", "1");
+org_html_manager.set("LINK_HOME", "./index.html");
+org_html_manager.set("LINK_UP", "./index.html");
+org_html_manager.set("LOCAL_TOC", "1");
+org_html_manager.set("VIEW_BUTTONS", "0");
+org_html_manager.set("MOUSE_HINT", "underline");
+org_html_manager.set("FIXED_TOC", "0");
+org_html_manager.set("TOC", "1");
+org_html_manager.set("VIEW", "info");
+org_html_manager.setup();  // activate after the parameters are set
+/*]]>*///-->
+</script>
 <script type="text/javascript">
 /*
 @licstart  The following is the entire license notice for the
@@ -225,6 +299,7 @@ for the JavaScript code in this tag.
  }
 /*]]>*///-->
 </script>
+
 </head>
 <body>
 <div id="content">
@@ -236,9 +311,22 @@ for the JavaScript code in this tag.
 <li><a href="#orgab0b8db">1. Language Extensions and Imports</a></li>
 <li><a href="#orgd478fb2">2. Sample Data For Tests</a></li>
 <li><a href="#org8f9f342">3. Functions To Query UserAPI</a></li>
-<li><a href="#orga924a88">4. Test Suite - Main</a></li>
-<li><a href="#org0416156">5. Run Test Suite</a></li>
-<li><a href="#orgf767807">6. Tangling</a></li>
+<li><a href="#org20f5907">4. Tests for <code>/index</code> route</a></li>
+<li><a href="#org3054687">5. Tests for <code>/login</code> route</a></li>
+<li><a href="#orgbadc0ea">6. Tests for <code>/addUser</code> route</a></li>
+<li><a href="#org0068c89">7. Tests for <code>/deleteUser</code> route</a></li>
+<li><a href="#org1a81cf0">8. Tests for <code>/showUsers</code> route</a></li>
+<li><a href="#org55782fe">9. Tests for <code>/logout</code> route</a></li>
+<li><a href="#org96874e9">10. Tests for <code>/setName</code> route</a></li>
+<li><a href="#org4e85686">11. Tests for <code>/setEmail</code> route</a></li>
+<li><a href="#org2e06fc4">12. Tests for <code>/showUserDetails</code> route</a></li>
+<li><a href="#org94e0f13">13. Tests for <code>/showSessions</code> route</a></li>
+<li><a href="#org432729f">14. Tests for <code>/showRoles</code> route</a></li>
+<li><a href="#org553147a">15. Tests for <code>/addRole</code> route</a></li>
+<li><a href="#orgc8dfa37">16. Tests for <code>/deleteRole</code> route</a></li>
+<li><a href="#orga924a88">17. Test Suite - Main</a></li>
+<li><a href="#org0416156">18. Run Test Suite</a></li>
+<li><a href="#orgf767807">19. Tangling</a></li>
 </ul>
 </div>
 </div>
@@ -294,12 +382,12 @@ import Test.QuickCheck
 
 
 -- to create a value of Session datatype
-createSession :: Integer -&gt; String -&gt; Role -&gt; Session
+createSession :: Integer -&gt; String -&gt; [Role] -&gt; Session
 createSession id email role = Session (toSqlKey $ fromInteger id) email role
 
 
 -- to create a value of User datatype
-createUser :: String -&gt; String -&gt; Role -&gt; User
+createUser :: String -&gt; String -&gt; [Role] -&gt; User
 createUser name email role = User name email role
 
 
@@ -313,29 +401,49 @@ userResponse :: Integer -&gt; Maybe ResponseUserId
 userResponse x = Just $ ResponseUserId (toSqlKey $ fromInteger x)
 
 
+-- to create a value of UpdateUserData datatype
+updateData :: String -&gt; String -&gt; UpdateUserData
+updateData old new = UpdateUserData old new
+
+
 -- data for user admin-user
 adminOneData :: User
-adminOneData = createUser "admin-user" "admin@email.com" Admin
+adminOneData = createUser "admin-user" "admin@email.com" [Admin]
 
 
 -- session for user admin-user
 adminOneSession :: Session
-adminOneSession = createSession 1 "admin@email.com" Admin
+adminOneSession = createSession 1 "admin@email.com" [Admin]
 
 
 -- user to add
 userOneData :: User
-userOneData = createUser "small-cat" "small@cat.com" NonAdmin
+userOneData = createUser "small-cat" "small@cat.com" [NonAdmin]
 
+
+-- user data with same email as userOneData
+repUserOneData :: User
+repUserOneData = createUser "smaller-cat" "small@cat.com" [Admin]
+-- userOneData after /setName operation
+userOneNewNameData :: User
+userOneNewNameData = createUser "warm-kitty" "small@cat.com" [NonAdmin]
+
+-- userOneData after /setEmail operation
+userOneNewEmailData :: User
+userOneNewEmailData = createUser "small-cat" "warm@kitty.com" [NonAdmin]
+
+-- userOneData after /addRole operation
+userOneNewRolesData :: User
+userOneNewRolesData = createUser "small-cat" "small@cat.com" [NonAdmin, Admin]
 
 -- session for user small-cat
 userOneSession :: Session
-userOneSession = createSession 2 "small@cat.com" NonAdmin
+userOneSession = createSession 2 "small@cat.com" [NonAdmin]
 
 
 -- another user to add
 userTwoData :: User
-userTwoData = createUser "large-cat" "large@cat.com" NonAdmin
+userTwoData = createUser "large-cat" "large@cat.com" [NonAdmin]
 </pre>
 </div>
 </div>
@@ -347,10 +455,17 @@ userTwoData = createUser "large-cat" "large@cat.com" NonAdmin
 <pre class="src src-haskell" id="orgbb0c909">-- query function types
 testIndex :: ClientM Text
 testLogin :: Session -&gt; ClientM (Maybe (ResponseSessionId))
-testShowUsers :: Maybe (String) -&gt;  ClientM [User]
+testShowUsers :: Maybe (String) -&gt;  ClientM [ShowUserData]
 testAddUser :: Maybe (String) -&gt; User -&gt; ClientM (Maybe (ResponseUserId))
 testDeleteUser :: Maybe (String) -&gt; UniqueUserData -&gt; ClientM (Maybe (User))
 testLogout :: Maybe (String) -&gt; Session -&gt; ClientM (Maybe (Session))
+testSetName :: Maybe (String) -&gt; UpdateUserData -&gt; ClientM (Maybe (User))
+testSetEmail :: Maybe (String) -&gt; UpdateUserData -&gt; ClientM (Maybe (User))
+testShowUserDetails :: Maybe (String) -&gt; String -&gt; ClientM (Maybe (User))
+testShowSessions :: Maybe (String) -&gt; ClientM ([Session])
+testShowRoles :: Maybe (String) -&gt; String -&gt; ClientM ([Role])
+testAddRole :: Maybe (String) -&gt; String -&gt; Role -&gt; ClientM (Maybe (User))
+testDeleteRole :: Maybe (String) -&gt; String -&gt; Role -&gt; ClientM (Maybe (User))
 
 
 -- a proxy to our API
@@ -359,24 +474,36 @@ userAPI = Data.Proxy.Proxy
 
 
 -- code that returns the client functions for our API
-(testIndex :&lt;|&gt; testLogin) :&lt;|&gt; (testLogout) :&lt;|&gt; (testShowUsers :&lt;|&gt; testAddUser :&lt;|&gt; testDeleteUser) = client userAPI
+(testIndex :&lt;|&gt;  testLogin) :&lt;|&gt; (testShowUsers :&lt;|&gt; testLogout :&lt;|&gt; testSetName :&lt;|&gt; testSetEmail) :&lt;|&gt; (testShowUserDetails :&lt;|&gt; testAddUser :&lt;|&gt; testDeleteUser :&lt;|&gt; testShowSessions :&lt;|&gt; testShowRoles :&lt;|&gt; testAddRole :&lt;|&gt; testDeleteRole) = client userAPI
 </pre>
 </div>
 </div>
 </div>
 
-<div id="outline-container-orga924a88" class="outline-2">
-<h2 id="orga924a88"><span class="section-number-2">4</span> Test Suite - Main</h2>
+<div id="outline-container-org20f5907" class="outline-2">
+<h2 id="org20f5907"><span class="section-number-2">4</span> Tests for <code>/index</code> route</h2>
 <div class="outline-text-2" id="text-4">
 <div class="org-src-container">
-<pre class="src src-haskell" id="org6f04018">spec :: Spec
-spec = do
+<pre class="src src-haskell" id="orgb17a121">indexTests :: Spec
+indexTests = do
   around withApp $ do
-
-
+    
     describe "/index" $ do
       it "Returns value from Index page" $ \ port -&gt; do
         (tryQuery port testIndex) `shouldReturn` pack("Welcome to User Directory")
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org3054687" class="outline-2">
+<h2 id="org3054687"><span class="section-number-2">5</span> Tests for <code>/login</code> route</h2>
+<div class="outline-text-2" id="text-5">
+<div class="org-src-container">
+<pre class="src src-haskell" id="org75718c5">loginTests :: Spec
+loginTests = do
+  
+  around withApp $ do
 
 
     describe "/login" $ do
@@ -384,34 +511,92 @@ spec = do
       it "Operates successfully" $ \ port -&gt; do
         (tryQuery port $ testLogin adminOneSession) `shouldReturn` (sessionResponse 1)
 
-      it "Attempts to login an user not in the system" $ \ port -&gt; do
-        (tryQuery port $ testLogin userOneSession) `shouldReturn` Nothing
+
+      it "Cannot login an user not in the system" $ \ port -&gt; do
+        (tryQuery port $ testLogin userOneSession) `shouldThrow` anyException
+
+
+      it "Cannot login user with role that user does not have" $ \ port -&gt; do
+        (tryQuery port $ testLogin (createSession 1 "admin@email.com" [NonAdmin])) `shouldThrow` anyException
+
+
+      it "Logs in an user twice with different roles" $ \ port -&gt; do
+        -- logs in an user with Admin role
+        tryQuery port $ testLogin adminOneSession
+        -- adds NonAdmin role to same user
+        tryQuery port $ testAddRole (Just "1") "admin@email.com" NonAdmin
+        -- logs in user again with NonAdmin role
+        (tryQuery port $ testLogin (createSession 1 "admin@email.com" [NonAdmin])) `shouldReturn` (sessionResponse 2)
+
+
+      it "Cannot login an user twice with the same role" $ \ port -&gt; do
+        -- logs in an user with Admin role
+        tryQuery port $ testLogin adminOneSession
+        -- logs in user again with same role
+        (tryQuery port $ testLogin adminOneSession) `shouldThrow` anyException
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgbadc0ea" class="outline-2">
+<h2 id="orgbadc0ea"><span class="section-number-2">6</span> Tests for <code>/addUser</code> route</h2>
+<div class="outline-text-2" id="text-6">
+<div class="org-src-container">
+<pre class="src src-haskell" id="org0d05d1e">addUserTests :: Spec
+addUserTests = do
+  
+  around withApp $ do
         
 
     describe "/addUser" $ do
 
+      
       it "Operates successfully" $ \ port -&gt; do
         -- login an Admin user who can add users
         tryQuery port $ testLogin adminOneSession
         -- adds an user
         (tryQuery port $ testAddUser (Just "1") userOneData) `shouldReturn` (userResponse 2)
 
+
       it "Only Admin user can add user" $ \ port -&gt; do
         -- login Admin user "admin-user"
         tryQuery port $ testLogin adminOneSession
         -- add NonAdmin user using credentials of "admin-user"
         tryQuery port $ testAddUser (Just "1") userOneData 
-       -- login NonAdmin user "small-cat"
+        -- login NonAdmin user "small-cat"
         tryQuery port $ testLogin userOneSession
         -- test-add user using credentials of "small-cat"
         (tryQuery port $ testAddUser (Just "2") userTwoData) `shouldThrow` anyErrorCall
 
-      it "Adding user when Session is not present in database" $ \ port -&gt; do
+
+      it "Adding user when not logged-in" $ \ port -&gt; do
         (tryQuery port $ testAddUser (Just "1") userOneData) `shouldThrow` anyErrorCall
 
 
+      it "Cannot add two users with the same email" $ \ port -&gt; do
+        -- logs in Admin user who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- adds user with email "small@cat.com"
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- adds another user with email "small@cat.com"
+        (tryQuery port $ testAddUser (Just "1") repUserOneData) `shouldThrow` anyErrorCall
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org0068c89" class="outline-2">
+<h2 id="org0068c89"><span class="section-number-2">7</span> Tests for <code>/deleteUser</code> route</h2>
+<div class="outline-text-2" id="text-7">
+<div class="org-src-container">
+<pre class="src src-haskell" id="org3400cfa">deleteUserTests :: Spec
+deleteUserTests = do
+
+  around withApp $ do
+
     describe "/deleteUser" $ do
 
+      
       it "Deletes user successfully" $ \ port -&gt; do
         -- to login "admin-user"
         tryQuery port $ testLogin adminOneSession
@@ -419,6 +604,7 @@ spec = do
         tryQuery port $ testAddUser (Just "1") userOneData
         -- to delete same user using credentials of "admin-user"
         (tryQuery port $ testDeleteUser (Just "1") (UniqueUserData "small@cat.com")) `shouldReturn` (Just userOneData)
+
 
       it "Only Admin user can delete user" $ \ port -&gt; do
         -- login Admin user "admin-user"
@@ -430,11 +616,13 @@ spec = do
         -- test-delete user using credentials of "small-cat"
         (tryQuery port $ testDeleteUser (Just "2") (UniqueUserData "admin@email.com")) `shouldThrow` anyException
 
+
       it "Cannot delete oneself" $ \ port -&gt; do
         -- login Admin user "admin-user"
         tryQuery port $ testLogin adminOneSession
         -- Admin user attempts to delete self
         (tryQuery port $ testDeleteUser (Just "1") (UniqueUserData "admin@email.com")) `shouldThrow` anyException
+
 
       it "Delete when Session not present in database" $ \ port -&gt; do
         -- login Admin user "admin-user"
@@ -444,6 +632,26 @@ spec = do
         -- test delete user using credentials of non-logged-in user
         (tryQuery port $ testDeleteUser (Just "3") (UniqueUserData "admin@email.com")) `shouldThrow` anyException
 
+
+      it "Cannot delete an user not in the system" $ \ port -&gt; do
+        -- login an Admin user who can delete users
+        tryQuery port $ testLogin adminOneSession
+        -- attempt to delete an user who is not in the database
+        (tryQuery port $ testDeleteUser (Just "1") (UniqueUserData "small@cat.com")) `shouldThrow` anyException
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org1a81cf0" class="outline-2">
+<h2 id="org1a81cf0"><span class="section-number-2">8</span> Tests for <code>/showUsers</code> route</h2>
+<div class="outline-text-2" id="text-8">
+<div class="org-src-container">
+<pre class="src src-haskell" id="org6132250">showUsersTests :: Spec
+showUsersTests = do
+
+  around withApp $ do
+        
 
     describe "/showUsers" $ do
 
@@ -455,12 +663,24 @@ spec = do
         -- add user "large-cat"
         tryQuery port $ testAddUser (Just "1") userTwoData
         -- test-show all users using credentials of "admin-user"
-        (tryQuery port $ testShowUsers (Just "1")) `shouldReturn` [adminOneData, userOneData, userTwoData]
+        (tryQuery port $ testShowUsers (Just "1")) `shouldReturn` (Prelude.map toShowUserData [adminOneData, userOneData, userTwoData])
 
       it "Cannot access list of users when session not in database" $ \ port -&gt; do
         (tryQuery port $ testShowUsers (Just "1")) `shouldThrow` anyException
-        
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org55782fe" class="outline-2">
+<h2 id="org55782fe"><span class="section-number-2">9</span> Tests for <code>/logout</code> route</h2>
+<div class="outline-text-2" id="text-9">
+<div class="org-src-container">
+<pre class="src src-haskell" id="org883ef5a">logoutTests :: Spec
+logoutTests = do
 
+  
+  around withApp $ do
+   
     describe "/logout" $ do
 
       it "Logs out user successfully" $ \ port -&gt; do
@@ -486,9 +706,444 @@ spec = do
 </div>
 </div>
 </div>
+
+<div id="outline-container-org96874e9" class="outline-2">
+<h2 id="org96874e9"><span class="section-number-2">10</span> Tests for <code>/setName</code> route</h2>
+<div class="outline-text-2" id="text-10">
+<div class="org-src-container">
+<pre class="src src-haskell" id="org642229a">setNameTests :: Spec
+setNameTests = do
+
+  around withApp $ do
+
+    describe "/setName" $ do
+
+      it "Sets the name of an user successfully using Admin auth" $ \ port -&gt; do
+
+        -- login an Admin user who can add users
+        tryQuery port $ (testLogin adminOneSession)
+        -- adds an user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- sets the name of the user
+        (tryQuery port $ testSetName (Just "1") (updateData "small-cat" "warm-kitty")) `shouldReturn` (Just userOneNewNameData)
+
+
+      it "Sets the name of user == self successfully using NonAdmin auth" $ \ port -&gt; do
+        
+        -- login an Admin user who can add users
+        tryQuery port $ (testLogin adminOneSession)
+        -- adds an user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- login a NonAdmin user
+        tryQuery port $ (testLogin userOneSession)
+        -- set the name of NonAdmin user
+        (tryQuery port $ testSetName (Just "2") (updateData "small-cat" "warm-kitty")) `shouldReturn` (Just userOneNewNameData)
+
+
+      it "Cannot set name when user not logged in" $ \ port -&gt; do
+        
+        -- login an Admin user who can add users
+        tryQuery port $ (testLogin adminOneSession)
+        -- adds an user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- sets the name of user
+        (tryQuery port $ testSetName (Just "2") (updateData "small-cat" "warm-kitty")) `shouldThrow` anyException
+
+
+      it "Cannot set name of another user without Admin auth" $ \ port -&gt; do
+
+        -- login an Admin user who can add users
+        tryQuery port $ (testLogin adminOneSession)
+        -- adds an user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- logs in a NonAdmin user
+        tryQuery port $ testLogin userOneSession
+        -- tries to change name of first user
+        (tryQuery port $ testSetName (Just "2") (updateData "admin-user" "admin-cat")) `shouldThrow` anyException
+
+
+      it "Cannot set name of an user not in the system" $ \ port -&gt; do
+        -- logs in Admin user who can set name of user
+        tryQuery port $ testLogin adminOneSession
+        -- attempts to set name of user who is not in the system
+        (tryQuery port $ testSetName (Just "1") (updateData "small-cat" "large-cat")) `shouldThrow` anyException
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org4e85686" class="outline-2">
+<h2 id="org4e85686"><span class="section-number-2">11</span> Tests for <code>/setEmail</code> route</h2>
+<div class="outline-text-2" id="text-11">
+<div class="org-src-container">
+<pre class="src src-haskell" id="org22c0269">setEmailTests :: Spec
+setEmailTests = do
+
+  around withApp $ do
+
+    describe "/setEmail" $ do
+
+      it "Sets the email of an user successfully using Admin auth" $ \ port -&gt; do
+
+        -- login an Admin user who can add users
+        tryQuery port $ (testLogin adminOneSession)
+        -- adds an user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- sets the email of the user
+        (tryQuery port $ testSetEmail (Just "1") (updateData "small@cat.com" "warm@kitty.com")) `shouldReturn` (Just userOneNewEmailData)
+
+
+      it "Sets the name of user == self successfully using NonAdmin auth" $ \ port -&gt; do
+        
+        -- login an Admin user who can add users
+        tryQuery port $ (testLogin adminOneSession)
+        -- adds an user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- login a NonAdmin user
+        tryQuery port $ (testLogin userOneSession)
+        -- set the email of NonAdmin user
+        (tryQuery port $ testSetEmail (Just "2") (updateData "small@cat.com" "warm@kitty.com")) `shouldReturn` (Just userOneNewEmailData)
+
+
+      it "Cannot set name when user not logged in" $ \ port -&gt; do
+        
+        -- login an Admin user who can add users
+        tryQuery port $ (testLogin adminOneSession)
+        -- adds an user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- sets the email of user
+        (tryQuery port $ testSetEmail (Just "2") (updateData "small@cat.com" "warm@kitty.com")) `shouldThrow` anyException
+
+
+      it "Cannot set name of another user without Admin auth" $ \ port -&gt; do
+
+        -- login an Admin user who can add users
+        tryQuery port $ (testLogin adminOneSession)
+        -- adds an user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- logs in a NonAdmin user
+        tryQuery port $ testLogin userOneSession
+        -- tries to change email of first user
+        (tryQuery port $ testSetEmail (Just "2") (updateData "admin@email.com" "admin@cat.com")) `shouldThrow` anyException
+
+
+      it "Cannot set email of an user not in the system" $ \ port -&gt; do
+        -- logs in Admin user who can set email of user
+        tryQuery port $ testLogin adminOneSession
+        -- attempts to set email of user who is not in the system
+        (tryQuery port $ testSetEmail (Just "1") (updateData "small@cat.com" "large@cat.com")) `shouldThrow` anyException
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org2e06fc4" class="outline-2">
+<h2 id="org2e06fc4"><span class="section-number-2">12</span> Tests for <code>/showUserDetails</code> route</h2>
+<div class="outline-text-2" id="text-12">
+<div class="org-src-container">
+<pre class="src src-haskell" id="orgf1748d2">showUserDetailsTests :: Spec
+showUserDetailsTests = do
+
+  around withApp $ do
+
+    describe "/showUserDetails" $ do
+
+      it "Successfully fetches the details of an user" $ \ port -&gt; do
+
+        -- logs in Admin user
+        tryQuery port $ testLogin adminOneSession
+        -- Admin user adds an user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- admin user fetches the details of the user
+        (tryQuery port $ testShowUserDetails (Just "1") "small@cat.com") `shouldReturn` (Just userOneData)
+
+
+      it "Non-logged-in user cannot fetch details of an user" $ \ port -&gt; do
+        (tryQuery port $ testShowUserDetails (Just "1") "admin@email.com") `shouldThrow` anyException
+
+
+      it "Non-admin user cannot fetch details of an user" $ \ port -&gt; do
+
+        -- log in Admin user who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- Admin user adds an user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- log in NonAdmin user who cannot fetch user details
+        tryQuery port $ testLogin userOneSession
+        -- NonAdmin user attempts to fetch details of an user
+        (tryQuery port $ testShowUserDetails (Just "2") "admin@email.com") `shouldThrow` anyException
+
+
+      it "Cannot fetch the details of an user not in the system" $ \ port -&gt; do
+
+          -- log in Admin user who can fetch user details
+          tryQuery port $ testLogin adminOneSession
+          -- Admin user attempts to fetch details of an user who is not in the system
+          (tryQuery port $ testShowUserDetails (Just "1") "small@cat.com") `shouldThrow` anyException
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org94e0f13" class="outline-2">
+<h2 id="org94e0f13"><span class="section-number-2">13</span> Tests for <code>/showSessions</code> route</h2>
+<div class="outline-text-2" id="text-13">
+<div class="org-src-container">
+<pre class="src src-haskell" id="org48895f7">showSessionsTests :: Spec
+showSessionsTests = do
+
+  around withApp $ do
+
+    describe "/showSessions" $ do
+
+      
+      it "Successfully shows all sessions present in the database" $ \ port -&gt; do
+
+        -- logs in user "admin-user"
+        tryQuery port $ testLogin adminOneSession
+        -- adds user "small-cat"
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- logs in user "small-cat"
+        tryQuery port $ testLogin userOneSession
+        -- fetches all sessions present in the database
+        (tryQuery port $ testShowSessions (Just "1")) `shouldReturn` [adminOneSession, userOneSession]
+
+
+      it "Throws error when non-logged-in user tries to view sessions" $ \ port -&gt; do
+        (tryQuery port $ testShowSessions (Just "1")) `shouldThrow` anyException
+
+
+      it "Throws error when NonAdmin user tries to view sessions" $ \ port -&gt; do
+
+        -- logs in Admin user who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- add a NonAdmin user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- logs in NonAdmin user
+        tryQuery port $ testLogin userOneSession
+        -- attempts to view sessions with NonAdmin auth
+        (tryQuery port $ testShowSessions (Just "2")) `shouldThrow` anyException
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org432729f" class="outline-2">
+<h2 id="org432729f"><span class="section-number-2">14</span> Tests for <code>/showRoles</code> route</h2>
+<div class="outline-text-2" id="text-14">
+<div class="org-src-container">
+<pre class="src src-haskell" id="org5135c2a">showRolesTests :: Spec
+showRolesTests = do
+
+  around withApp $ do
+
+    describe "/showRoles" $ do
+
+      
+      it "Successfully shows roles of an user present in the database" $ \ port -&gt; do
+
+        -- logs in user "admin-user"
+        tryQuery port $ testLogin adminOneSession
+        -- adds user "small-cat"
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- logs in user "small-cat"
+        tryQuery port $ testLogin userOneSession
+        -- fetches all roles of the user
+        (tryQuery port $ testShowRoles (Just "1") "small@cat.com") `shouldReturn` [NonAdmin]
+
+
+      it "Throws error when non-logged-in user tries to view roles" $ \ port -&gt; do
+        (tryQuery port $ testShowRoles (Just "1") "admin@email.com") `shouldThrow` anyException
+
+
+      it "Throws error when NonAdmin user tries to view roles" $ \ port -&gt; do
+
+        -- logs in Admin user who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- add a NonAdmin user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- logs in NonAdmin user
+        tryQuery port $ testLogin userOneSession
+        -- attempts to view roles with NonAdmin auth
+        (tryQuery port $ testShowRoles (Just "2") "admin@email.com") `shouldThrow` anyException
+
+
+      it "Cannot fetch roles of an user who is not in the database" $ \ port -&gt; do
+
+        -- logs in Admin user who can fetch roles
+        tryQuery port $ testLogin adminOneSession
+        -- tries to fetch roles of an user who is not in the database
+        (tryQuery port $ testShowRoles (Just "1") "small@cat.com") `shouldThrow` anyException
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org553147a" class="outline-2">
+<h2 id="org553147a"><span class="section-number-2">15</span> Tests for <code>/addRole</code> route</h2>
+<div class="outline-text-2" id="text-15">
+<div class="org-src-container">
+<pre class="src src-haskell" id="org44b7839">addRoleTests :: Spec
+addRoleTests = do
+
+  around withApp $ do
+
+    describe "/addRole" $ do
+
+
+      it "Successfully adds role to an user" $ \ port -&gt; do
+
+        -- logs in Admin user who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- adds a NonAdmin user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- add role Admin to user
+        (tryQuery port $ testAddRole (Just "1") "small@cat.com" Admin) `shouldReturn` (Just userOneNewRolesData)
+
+
+      it "Cannot add role to user when not logged in" $ \ port -&gt; do
+
+        -- logs in Admin user who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- adds a NonAdmin user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- attempts to add role to "admin-user" when not logged in
+        (tryQuery port $ testAddRole (Just "2") "admin@email.com" NonAdmin) `shouldThrow` anyException
+
+
+      it "Cannot add role to user when not logged in as Admin" $ \ port -&gt; do
+        -- logs in Admin user who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- adds a NonAdmin user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- logs in NonAdmin user
+        tryQuery port $ testLogin userOneSession
+        -- attempts to add role to "admin-user" when logged in as NonAdmin
+        (tryQuery port $ testAddRole (Just "2") "admin@email.com" NonAdmin) `shouldThrow` anyException
+
+
+      it "Cannot add duplicate role to user" $ \ port -&gt; do
+        -- logs in Admin user who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- adds a NonAdmin user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- attempts to add NonAdmin role to user "small-cat"
+        (tryQuery port $ testAddRole (Just "1") "small@cat.com" NonAdmin) `shouldThrow` anyException
+
+
+      it "Cannot add role to user that does not exist in database" $ \ port -&gt; do
+        -- logs in Admin user who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- attempts to add Admin role to nonexistent user
+        (tryQuery port $ testAddRole (Just "1") "small@cat.com" Admin) `shouldThrow` anyException
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgc8dfa37" class="outline-2">
+<h2 id="orgc8dfa37"><span class="section-number-2">16</span> Tests for <code>/deleteRole</code> route</h2>
+<div class="outline-text-2" id="text-16">
+<div class="org-src-container">
+<pre class="src src-haskell" id="org0454f5b">deleteRoleTests :: Spec
+deleteRoleTests = do
+
+  around withApp $ do
+
+    describe "/deleteRole" $ do
+
+
+      it "Successfully deletes role from an user" $ \ port -&gt; do
+
+        -- logs in Admin user who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- adds a NonAdmin user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- add role Admin to user
+        tryQuery port $ testAddRole (Just "1") "small@cat.com" Admin
+        -- deletes role Admin from user
+        (tryQuery port $ testDeleteRole (Just "1") "small@cat.com" Admin) `shouldReturn` (Just userOneData)
+
+
+      it "Cannot delete role from user when not logged in" $ \ port -&gt; do
+
+        -- logs in Admin user "admin-user" who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- adds a NonAdmin user "small-cat"
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- adds role Admin to NonAdmin user "small-cat"
+        tryQuery port $ testAddRole (Just "1") "small@cat.com" Admin
+        -- user "admin-user" logs out
+        tryQuery port $ testLogout (Just "1") adminOneSession
+        -- attempt to delete role from user when not logged in
+        (tryQuery port $ testDeleteRole (Just "1") "small@cat.com" Admin) `shouldThrow` anyException
+
+
+      it "Cannot delete role from user when not logged in as Admin" $ \ port -&gt; do
+        
+        -- logs in Admin user "admin-user" who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- adds a NonAdmin user "small-cat"
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- adds role NonAdmin to Admin user "admin-user"
+        tryQuery port $ testAddRole (Just "1") "admin@email.com" NonAdmin
+        -- NonAdmin user "small-cat" logs in
+        tryQuery port $ testLogin userOneSession
+        -- attempt to delete role from user when logged in as NonAdmin user
+        (tryQuery port $ testDeleteRole (Just "2") "admin@email.com" NonAdmin) `shouldThrow` anyException
+
+
+      it "Cannot delete nonexistent role to user" $ \ port -&gt; do
+        -- logs in Admin user who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- adds a NonAdmin user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- attempts to delete Admin role from user "small-cat"
+        (tryQuery port $ testDeleteRole (Just "1") "small@cat.com" Admin) `shouldThrow` anyException
+
+
+      it "Cannot delete role from user that does not exist in database" $ \ port -&gt; do
+        -- logs in Admin user who can delete roles
+        tryQuery port $ testLogin adminOneSession
+        -- attempts to delete Admin role from nonexistent user
+        (tryQuery port $ testDeleteRole (Just "1") "small@cat.com" NonAdmin) `shouldThrow` anyException
+
+
+      it "Cannot delete role when user only has single role" $ \ port -&gt; do
+        -- logs in Admin user who can add users
+        tryQuery port $ testLogin adminOneSession
+        -- adds a NonAdmin user
+        tryQuery port $ testAddUser (Just "1") userOneData
+        -- attempts to delete NonAdmin role from user "small-cat"
+        (tryQuery port $ testDeleteRole (Just "1") "small@cat.com" NonAdmin) `shouldThrow` anyException
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orga924a88" class="outline-2">
+<h2 id="orga924a88"><span class="section-number-2">17</span> Test Suite - Main</h2>
+<div class="outline-text-2" id="text-17">
+<div class="org-src-container">
+<pre class="src src-haskell" id="org6f04018">spec :: Spec
+spec = do
+  indexTests
+  loginTests
+  addUserTests
+  deleteUserTests
+  showUsersTests
+  logoutTests
+  setNameTests
+  setEmailTests
+  showUserDetailsTests
+  showSessionsTests
+  showRolesTests
+  addRoleTests
+  deleteRoleTests
+</pre>
+</div>
+</div>
+</div>
+
 <div id="outline-container-org0416156" class="outline-2">
-<h2 id="org0416156"><span class="section-number-2">5</span> Run Test Suite</h2>
-<div class="outline-text-2" id="text-5">
+<h2 id="org0416156"><span class="section-number-2">18</span> Run Test Suite</h2>
+<div class="outline-text-2" id="text-18">
 <div class="org-src-container">
 <pre class="src src-haskell" id="orgabb33da">withApp :: (Int -&gt; IO a) -&gt; IO a
 withApp action =
@@ -512,13 +1167,26 @@ tryQuery port query = do
 </div>
 </div>
 <div id="outline-container-orgf767807" class="outline-2">
-<h2 id="orgf767807"><span class="section-number-2">6</span> Tangling</h2>
-<div class="outline-text-2" id="text-6">
+<h2 id="orgf767807"><span class="section-number-2">19</span> Tangling</h2>
+<div class="outline-text-2" id="text-19">
 <div class="org-src-container">
 <pre class="src src-haskell" id="org26943a1">&lt;&lt;extns_and_imports&gt;&gt;
 &lt;&lt;sample_data&gt;&gt;
 &lt;&lt;query_functions&gt;&gt;
 &lt;&lt;test_suite_main&gt;&gt;
+&lt;&lt;index_tests&gt;&gt;
+&lt;&lt;login_tests&gt;&gt;
+&lt;&lt;add_user_tests&gt;&gt;
+&lt;&lt;delete_user_tests&gt;&gt;
+&lt;&lt;show_users_tests&gt;&gt;
+&lt;&lt;logout_tests&gt;&gt;
+&lt;&lt;set_name_tests&gt;&gt;
+&lt;&lt;set_email_tests&gt;&gt;
+&lt;&lt;show_user_details_tests&gt;&gt;
+&lt;&lt;show_sessions_tests&gt;&gt;
+&lt;&lt;show_roles_tests&gt;&gt;
+&lt;&lt;add_role_tests&gt;&gt;
+&lt;&lt;delete_role_tests&gt;&gt;
 &lt;&lt;run_test_suite&gt;&gt;
 </pre>
 </div>
@@ -527,7 +1195,7 @@ tryQuery port query = do
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Atreyee</p>
-<p class="date">Created: 2017-06-30 Fri 10:21</p>
+<p class="date">Created: 2017-07-06 Thu 16:45</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
