@@ -1,0 +1,220 @@
+#+TITLE: Example Servant App
+
+
+* Introduction
+
+Controllers for handling the following routes :
+
+** Routes not requiring authentication
+
+
+*** index
+
+   - URL :: /index
+
+   - Content Type :: None
+
+   - Data Params :: None
+
+   - Success Response ::
+        
+        + Response Code: 200
+        + Response type: text/plain;charset=utf-8
+        + Content:
+
+          #+BEGIN_EXAMPLE
+"Welcome to User Directory"
+          #+END_EXAMPLE
+
+   - Error Response ::
+
+        + Code: 405 Method Not Allowed
+
+*** login
+
+
+   - URL :: /login
+            
+   - Method :: POST
+
+   - Content Type :: application/json
+
+   - Data Params :: 
+       {
+         "email" : <user-email>,
+         "roles" :
+           {
+             "role" : <user-role>
+           }
+       }
+
+   - Success Response ::
+     + Code: 200
+     + Content: 
+
+       #+BEGIN_EXAMPLE
+
+    {
+        "SessionId" : <session-id>
+    }
+       #+END_EXAMPLE
+
+   - Error Response ::
+
+     + Code: 400 Bad Request
+     + Content: 
+       { errBody : "Malformed arguments"}
+
+** Routes requiring login authentication
+
+*** showUser
+
+
+  - URL :: /showUsers
+  - Method :: GET
+
+  - URL Params ::  None
+       
+  - Success Response ::
+   
+    + Content ::
+      #+BEGIN_EXAMPLE
+  [
+	{
+        email: "abc@xyz.com",
+        roles:
+            role: "NonAdmin"
+        name: "Abc Def"
+    }
+  ]  
+      #+END_EXAMPLE
+
+*** logout
+** Routes requiring admin authentication
+*** addUser
+
+   - URL :: /addUser
+
+   - Method :: POST
+
+   - Data Params ::
+     {
+      'name': '<value>',
+      'email': '<value>',
+     }
+
+   - Success Response ::
+     + <userId>
+
+*** deleteUser
+
+   - URL :: /deleteUser
+
+   - Method :: POST
+
+   - Data Params ::
+     {
+       "data" : <user-email>
+     }
+
+   - Success Response ::
+        
+        + Content ::
+          
+          #+BEGIN_EXAMPLE
+{
+    "email" : "smallcat@email.com"
+    "roles" :
+        {
+            "role" : NonAdmin
+        }
+    "name" : "Small Cat"
+}
+          #+END_EXAMPLE
+
+* Language Extensions and Imports 
+
+#+NAME: extns_and_imports
+#+BEGIN_SRC haskell 
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeOperators #-}
+
+module Api where
+
+import Prelude ()
+import Prelude.Compat
+
+import Control.Monad.Except
+import Control.Monad.Reader
+import Data.Aeson.Compat
+import Data.Aeson.Types
+import Data.Attoparsec.ByteString
+import Data.ByteString (ByteString)
+import Data.List
+import Data.Maybe
+import Data.String.Conversions
+import Data.Time.Calendar
+import GHC.Generics
+import Lucid
+import Network.HTTP.Media ((//), (/:))
+import Network.Wai
+import Network.Wai.Handler.Warp
+import Servant
+import System.Directory
+import Text.Blaze
+import Text.Blaze.Html.Renderer.Utf8
+import qualified Data.Aeson.Parser
+import qualified Text.Blaze.Html
+
+import Data.Proxy
+import Data.Text
+
+import Database.Persist
+
+import Models
+import SecureApi
+import Servant.API
+#+END_SRC
+
+* API 
+
+** Routes not requiring authentication
+
+#+NAME: nonsecure_routes
+#+BEGIN_SRC haskell
+type NonSecureRoutes = "index" :> Get '[PlainText] Text
+          :<|> "login" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (ResponseSessionId))
+#+END_SRC
+** Routes requiring authentication
+
+#+NAME: secure_routes
+#+BEGIN_SRC haskell
+ 
+type SecureRoutes = Header "Cookie" String :> "showUsers" :> Get '[JSON] [User]
+          :<|> Header "Cookie" String :> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (ResponseUserId))
+          :<|> Header "Cookie" String :> "deleteUser" :> ReqBody '[JSON] UniqueUserData :> Post '[JSON] (Maybe (User))
+          :<|> Header "Cookie" String :> "logout" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Session))
+             
+#+END_SRC
+** Combined API
+
+#+NAME: combined_api
+#+BEGIN_SRC haskell
+type UserAPI = NonSecureRoutes
+          :<|> SecureRoutes  
+
+#+END_SRC
+
+* Tangling
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
+<<extns_and_imports>>
+<<nonsecure_routes>>
+<<combined_api>>
+#+END_SRC

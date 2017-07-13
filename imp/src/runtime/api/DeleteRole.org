@@ -1,0 +1,111 @@
+#+TITLE: Delete Role Api
+
+
+
+* Language Extensions and Imports
+  
+
+#+NAME: extns_and_imports
+#+BEGIN_SRC haskell 
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeOperators #-}
+
+module DeleteRole where
+
+import Prelude ()
+import Prelude.Compat
+
+import Control.Monad.Except
+import Control.Monad.Reader
+import Data.Aeson.Compat
+import Data.Aeson.Types
+import Data.Attoparsec.ByteString
+import Data.ByteString (ByteString)
+import Data.List
+import Data.Maybe
+import Data.String.Conversions
+import Network.HTTP.Media ((//), (/:))
+import Network.Wai
+import Network.Wai.Handler.Warp
+import Servant
+import System.Directory
+import Text.Blaze
+import Text.Blaze.Html.Renderer.Utf8
+import qualified Data.Aeson.Parser
+import qualified Text.Blaze.Html
+import Data.Text
+
+import Role
+import Models
+
+import Servant.API
+#+END_SRC
+
+* REST
+
+
+API to delete a role of a user.
+
+** API Design
+
+  - URL :: /deleteRole
+  - Method :: Get
+
+  - URL Params ::  
+    #+BEGIN_EXAMPLE
+    "email" : "xyz@gmail.com",
+    "role" : "admin"
+    #+END_EXAMPLE		   
+  - Success Response ::
+    + Code: 200
+
+    + Content ::
+      #+BEGIN_EXAMPLE
+    {
+        "email" : <email>,
+        "name"  : <name>,
+        "roles" :
+            [
+                {"role" : "Admin"}
+            ]
+    }
+      #+END_EXAMPLE
+
+  - Error Response ::
+    + Code: 401 UNAUTHORIZED
+
+    OR
+
+    + Code: 400 Bad Request
+
+    OR
+
+    + Code: 500
+
+  - Example ::
+    #+BEGIN_EXAMPLE
+    http://localhost:8000/deleteRole
+    #+END_EXAMPLE
+** Implementation
+
+#+NAME: delete_role
+#+BEGIN_SRC haskell
+
+type DeleteRoleApi = Header "Cookie" String :> "deleteRole" :> Capture "email" String :> Capture "role" Role :> Post '[JSON] (Maybe (User))
+
+#+END_SRC
+
+* Tangling
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle DeleteRole.hs
+
+<<extns_and_imports>>
+<<delete_role>>
+
+#+END_SRC

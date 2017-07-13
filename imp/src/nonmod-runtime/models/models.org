@@ -1,0 +1,334 @@
+#+TITLE: Models - Using Persistent Database
+
+
+* Introduction
+
+The datatypes used in the system are defined here.
+
+* Language Extensions and Imports
+  
+#+NAME: extns_and_imports
+#+BEGIN_SRC haskell 
+{-# LANGUAGE EmptyDataDecls             #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE QuasiQuotes                #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeFamilies               #-}
+
+module Models where
+import Data.Aeson
+import Data.Text
+import Web.HttpApiData
+
+import Role
+
+
+import           Control.Monad.IO.Class  (liftIO)
+import           Database.Persist 
+import           Database.Persist.Sqlite
+import           Database.Persist.TH
+
+import           GHC.Generics
+#+END_SRC
+* Externally Defined Datatypes
+
+Datatype =Role=, defined in an external file.
+** Role
+   
+#+NAME: external_types
+#+BEGIN_SRC haskell :tangle Role.hs
+-- Role.hs
+-- defining the enumerated Role datatype
+
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE DeriveGeneric #-}
+
+
+module Role where
+
+import Database.Persist.TH
+import GHC.Generics
+import Data.Aeson
+import Data.Text
+import Web.HttpApiData
+
+data Role = Admin | NonAdmin
+  deriving (Generic, Show, Read, Eq)
+
+instance ToJSON Role where
+  toJSON Admin = object [pack("role") .= "Admin"]
+  toJSON NonAdmin = object [pack("role") .= "NonAdmin"]
+
+instance FromJSON Role where
+  parseJSON (Object o) = do
+    role <- o .: pack("role")
+    case (role :: String) of
+      "Admin" -> return Admin
+      "NonAdmin" -> return NonAdmin
+
+-- storing this datatype as a PersistField type
+derivePersistField "Role"
+
+
+-- deriving a FromHttpApiData instance for this
+instance FromHttpApiData Role where
+ -- parseQueryParam :: Text -> Either Text Role
+  parseQueryParam role = Right (read $ unpack role)
+      
+
+-- deriving a ToHttpApiData instance for this
+instance ToHttpApiData Role where
+--  toQueryParam :: Role -> Text
+  toQueryParam role = pack (show role)
+      
+
+#+END_SRC
+* Database Models
+
+These are the models for the types stored in the database.
+
+Each datatype corresponds to a table, and each field of a datatype corresponds
+to a column in the table.
+
+#+NAME: database_models
+#+BEGIN_SRC haskell
+
+share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
+User
+  name String
+  email String
+  roles [Role]
+  UniqueEmail email
+  deriving Eq Read Show
+Session
+  userMappingToSession UserId
+  userEmail String
+  userRoles [Role]
+  UniqueSessionDetails userEmail userRoles
+  deriving Eq Read Show
+|]
+
+#+END_SRC
+
+* Custom Datatypes For Instruction Input
+  
+Defining custom datatypes for the request body when required.
+
+** =UniqueUserData= : a unique value to identify the user by
+
+In this case, we take =UniqueUserData= to be =userEmail=.
+
+#+NAME: unique_user_data
+#+BEGIN_SRC haskell
+
+data UniqueUserData = UniqueUserData {
+                                       userData :: String
+                                     } deriving (Eq, Read, Show)
+
+
+instance ToJSON UniqueUserData where
+  toJSON (UniqueUserData userData) =
+    object ["data" .= userData]
+
+instance FromJSON UniqueUserData where
+  parseJSON = withObject "UniqueUserData" $ \ v ->
+    UniqueUserData <$> v .: "data"
+
+
+
+#+END_SRC
+
+** =UpdateUserData=
+
+Datatype for instruction input when updating an User field.
+
+#+NAME: update_user_data
+#+BEGIN_SRC haskell
+
+data UpdateUserData = UpdateUserData {
+                                     currentData :: String,
+                                     newData :: String
+                                     } deriving (Eq, Read, Show)
+
+
+instance ToJSON UpdateUserData where
+  toJSON (UpdateUserData currentData newData) =
+    object ["current-data" .= currentData,
+            "new-data"     .= newData]
+
+
+instance FromJSON UpdateUserData where
+  parseJSON = withObject "UpdateUserData" $ \ v ->
+    UpdateUserData <$> v .: "current-data"
+                   <*> v .: "new-data"
+
+#+END_SRC
+* Custom Datatypes for Response
+
+Defining custom datatypes/instances for response.
+
+** ResponseUserId
+
+#+NAME: response_user_id
+#+BEGIN_SRC haskell
+data ResponseUserId = ResponseUserId {
+                                     userIdValue :: (Key (User))
+                                     } deriving (Eq, Read, Show)
+
+
+                      
+
+#+END_SRC
+** ResponseSessionId
+
+#+NAME: response_session_id
+#+BEGIN_SRC haskell
+data ResponseSessionId = ResponseSessionId {
+                                     sessionIdValue :: (Key (Session))
+                                     } deriving (Eq, Read, Show)
+
+
+#+END_SRC
+** ShowUserData
+
+#+NAME: show_user_data
+#+BEGIN_SRC haskell
+
+data ShowUserData = ShowUserData {
+                                 showUserName  :: String,
+                                 showUserEmail :: String
+                                 } deriving (Show, Read, Eq)
+
+
+instance ToJSON ShowUserData where
+  toJSON (ShowUserData showUserName showUserEmail) =
+    object ["name"  .= showUserName,
+            "email" .= showUserEmail]
+
+
+instance FromJSON ShowUserData where
+  parseJSON = withObject "ShowUserData" $ \ v ->
+    ShowUserData <$> v .: "name"
+                   <*> v .: "email"
+
+
+-- function that extracts ShowUserData from User 
+toShowUserData :: User -> ShowUserData
+toShowUserData (User userName userEmail userRoles) = ShowUserData userName userEmail
+
+#+END_SRC
+* Datatype Work
+** Converting To And From Route Datatypes
+*** Extracting =sessionUserEmail= from =Session=
+
+#+NAME: email_from_session
+#+BEGIN_SRC haskell
+
+-- to extract email from session
+sessionToEmail :: Session -> String
+sessionToEmail (Session sessionUserId sessionUserEmail sessionUserRoles) = sessionUserEmail
+
+#+END_SRC
+
+*** =UniqueUserData= to =Text=
+
+#+NAME: from_uniqueuserdata_to_text
+#+BEGIN_SRC haskell
+
+toTextDatatype :: UniqueUserData -> Text
+toTextDatatype (UniqueUserData userData) = pack(userData)
+
+#+END_SRC
+** Jsonifying Datatypes
+
+Making types an instance of classes =ToJSON= and =FromJSON=.
+
+*** Jsonifying User Datatype
+
+#+NAME: jsonify_user
+#+BEGIN_SRC haskell
+
+instance ToJSON User where
+  toJSON (User name email roles) =
+    object [ "name" .= name
+           , "email"  .= email
+           , "roles" .= roles]
+
+
+instance FromJSON User where
+  parseJSON = withObject "User" $ \ v ->
+    User <$> v .: "name"
+         <*> v .: "email"
+         <*> v .: "roles"
+#+END_SRC
+
+*** Jsonifying Session Datatype
+
+#+NAME: jsonify_session
+#+BEGIN_SRC haskell
+instance FromJSON Session where
+  parseJSON = withObject "Session" $ \ v ->
+    Session <$> v .: "userId"
+            <*> v .: "email"
+            <*> v .: "roles"
+
+instance ToJSON Session where
+  toJSON (Session sessionMappingToUser sessionEmail sessionRoles) =
+    object ["userId" .= sessionMappingToUser
+          , "email"  .= sessionEmail
+          , "roles"  .= sessionRoles]
+
+
+#+END_SRC
+
+*** Jsonifying ResponseUserId Datatype
+
+#+NAME: jsonify_user_id
+#+BEGIN_SRC haskell
+instance FromJSON ResponseUserId where
+  parseJSON (Object o) =
+     ResponseUserId <$> o .: "UserId"
+
+instance ToJSON ResponseUserId where
+  toJSON (ResponseUserId value)  =
+    object ["UserId" .= value]
+
+
+#+END_SRC
+*** Jsonifying ResponseSessionId Datatype
+
+#+NAME: jsonify_session_id
+#+BEGIN_SRC haskell
+instance FromJSON ResponseSessionId where
+  parseJSON (Object o) =
+     ResponseSessionId <$> o .: "SessionId"
+
+instance ToJSON ResponseSessionId where
+  toJSON (ResponseSessionId value) =
+    object ["SessionId" .= value]
+
+
+#+END_SRC
+
+* Tangling 
+
+#+NAME: tangling
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Models.hs
+<<extns_and_imports>>
+<<database_models>>
+<<unique_user_data>>
+<<update_user_data>>
+<<response_user_id>>
+<<response_session_id>>
+<<show_user_data>>
+<<email_from_session>>
+<<from_uniqueuserdata_to_text>>
+<<jsonify_user>>
+<<jsonify_session>>
+<<jsonify_user_id>>
+<<jsonify_session_id>>
+#+END_SRC

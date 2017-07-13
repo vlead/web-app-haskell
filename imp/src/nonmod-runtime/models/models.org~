@@ -1,0 +1,172 @@
+#+TITLE: Models - Using Persistent Database
+
+
+* Introduction
+
+The data model- that are stored in the database- are defined here. 
+
+We define here a single database that stores a value - User.
+** User
+
+   - id
+   - name
+   - email
+   - roles
+
+* Language Extensions and Imports
+  
+#+NAME: extns_and_imports
+#+BEGIN_SRC haskell 
+{-# LANGUAGE EmptyDataDecls             #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE QuasiQuotes                #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeFamilies               #-}
+
+module Models where
+import Data.Aeson
+import Data.Text
+
+import Role
+
+
+import           Control.Monad.IO.Class  (liftIO)
+import           Database.Persist 
+import           Database.Persist.Sqlite
+import           Database.Persist.TH
+
+import           GHC.Generics
+#+END_SRC
+* Externally Defined Datatypes
+
+=Persistent= requires us to define custom datatypes in an external file (due to
+the way Template Haskell in the main =Models= module is parsed.) 
+
+** Role
+   
+#+NAME: external_types
+#+BEGIN_SRC haskell :tangle Role.hs
+-- Role.hs
+-- defining the enumerated Role datatype
+
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE DeriveGeneric #-}
+
+
+module Role where
+
+import Database.Persist.TH
+import GHC.Generics
+import Data.Aeson
+import Data.Text
+
+data Role = Admin | NonAdmin
+  deriving (Generic, Show, Read, Eq)
+
+instance ToJSON Role where
+  toJSON Admin = object [pack("role") .= "Admin"]
+  toJSON NonAdmin = object [pack("role") .= "NonAdmin"]
+
+instance FromJSON Role where
+  parseJSON (Object o) = do
+    role <- o .: pack("role")
+    case (role :: String) of
+      "Admin" -> return Admin
+      "NonAdmin" -> return NonAdmin
+
+-- storing this datatype as a PersistField type
+derivePersistField "Role"
+
+  
+
+#+END_SRC
+* Database Models
+
+#+NAME: database_models
+#+BEGIN_SRC haskell
+
+share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
+User
+  name String
+  email String
+  roles Role
+  UniqueEmail email
+  deriving Eq Read Show
+Session
+  userMappingToSession UserId
+  userEmail String
+  userRoles Role
+  UniqueSessionDetails userEmail userRoles
+  deriving Eq Read Show
+|]
+
+#+END_SRC
+
+* Custom Datatypes For Instruction Input
+  
+Defining custom datatypes for the request body when required.
+
+** =UniqueUserData= : a unique value to identify the user by
+
+In this case, we take =UniqueUserData= to be =userEmail=.
+
+#+NAME: unique_user_data
+#+BEGIN_SRC haskell
+
+data UniqueUserData = UniqueUserData {
+                                       userData :: String
+                                     } deriving (Eq, Read, Show)
+
+
+instance ToJSON UniqueUserData where
+  toJSON (UniqueUserData userData) =
+    object ["data" .= userData]
+
+instance FromJSON UniqueUserData where
+  parseJSON = withObject "UniqueUserData" $ \ v ->
+    UniqueUserData <$> v .: "data"
+
+
+
+#+END_SRC
+
+* Custom Datatypes for Response
+
+Defining custom datatypes/instances for response.
+
+** ResponseUserId
+
+#+NAME: response_user_id
+#+BEGIN_SRC haskell
+data ResponseUserId = ResponseUserId {
+                                     userIdValue :: (Key (User))
+                                     } deriving (Eq, Read, Show)
+
+
+                      
+
+#+END_SRC
+** ResponseSessionId
+
+#+NAME: response_session_id
+#+BEGIN_SRC haskell
+data ResponseSessionId = ResponseSessionId {
+                                     sessionIdValue :: (Key (Session))
+                                     } deriving (Eq, Read, Show)
+
+
+#+END_SRC
+* Tangling 
+
+#+NAME: tangling
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Models.hs
+<<extns_and_imports>>
+<<database_models>>
+<<unique_user_data>>
+<<response_user_id>>
+<<response_session_id>>
+#+END_SRC

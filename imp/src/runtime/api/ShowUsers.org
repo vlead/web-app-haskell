@@ -1,0 +1,107 @@
+#+TITLE: Show Users Api
+
+
+
+* Language Extensions and Imports
+  
+
+#+NAME: extns_and_imports
+#+BEGIN_SRC haskell 
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeOperators #-}
+
+module ShowUsers where
+
+import Prelude ()
+import Prelude.Compat
+
+import Control.Monad.Except
+import Control.Monad.Reader
+import Data.Aeson.Compat
+import Data.Aeson.Types
+import Data.Attoparsec.ByteString
+import Data.ByteString (ByteString)
+import Data.List
+import Data.Maybe
+import Data.String.Conversions
+import Network.HTTP.Media ((//), (/:))
+import Network.Wai
+import Network.Wai.Handler.Warp
+import Servant
+import System.Directory
+import Text.Blaze
+import Text.Blaze.Html.Renderer.Utf8
+import qualified Data.Aeson.Parser
+import qualified Text.Blaze.Html
+import Data.Text
+
+import Models
+
+import Servant.API
+#+END_SRC
+
+* REST
+
+
+** API Design
+
+  - URL :: /showUsers
+  - Method :: GET
+  - Headers ::
+    
+    + Cookie: <session-id>
+
+  - URL Params :: None 
+       
+  - Success Response ::
+    + Code: 200
+
+    + Content :: list of users - name and email
+      #+BEGIN_EXAMPLE
+    [
+      {
+        "name"  : <value>,
+        "email" : <value>  
+      }
+    ]
+      #+END_EXAMPLE
+
+  - Error Response ::
+    + Code: 403 
+
+    OR
+
+    + Code: 400 Bad Request
+
+    OR
+
+    + Code: 500
+
+  - Example ::
+    #+BEGIN_EXAMPLE
+    http://localhost:8000/showUsers
+    #+END_EXAMPLE
+
+** Implementation
+
+#+NAME: show_users
+#+BEGIN_SRC haskell
+
+type ShowUsersApi = Header "Cookie" String :> "showUsers" :> Get '[JSON] [ShowUserData] 
+
+#+END_SRC
+
+* Tangling
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle ShowUsers.hs
+
+<<extns_and_imports>>
+<<show_users>>
+
+#+END_SRC

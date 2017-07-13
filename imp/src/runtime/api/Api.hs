@@ -40,12 +40,31 @@ import Data.Text
 import Database.Persist
 
 import Models
-import NonSecureApi
-import NonAdminApi
-import AdminApi
-
+import Login
+import ShowUsers
+import Logout
+import SetName
+import SetEmail
+import ShowUserDetails
+import AddUser
+import DeleteUser
+import ShowSessions
+import ShowRoles
+import AddRole
+import DeleteRole
+import Index
 
 import Servant.API
-type UserAPI = NonSecureRoutes
-          :<|> NonAdminRoutes
-          :<|> AdminRoutes
+type UserAPI = IndexApi 
+          :<|> LoginApi
+          :<|> ShowUsersApi
+          :<|> LogoutApi
+          :<|> SetNameApi
+          :<|> SetEmailApi
+          :<|> ShowUserDetailsApi
+          :<|> AddUserApi
+          :<|> DeleteUserApi
+          :<|> ShowSessionsApi
+          :<|> ShowRolesApi
+          :<|> AddRoleApi
+          :<|> DeleteRoleApi

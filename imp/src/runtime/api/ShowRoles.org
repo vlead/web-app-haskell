@@ -1,0 +1,108 @@
+#+TITLE: Show Roles Api
+
+
+* Language Extensions and Imports
+  
+
+#+NAME: extns_and_imports
+#+BEGIN_SRC haskell 
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeOperators #-}
+
+module ShowRoles where
+
+import Prelude ()
+import Prelude.Compat
+
+import Control.Monad.Except
+import Control.Monad.Reader
+import Data.Aeson.Compat
+import Data.Aeson.Types
+import Data.Attoparsec.ByteString
+import Data.ByteString (ByteString)
+import Data.List
+import Data.Maybe
+import Data.String.Conversions
+import Network.HTTP.Media ((//), (/:))
+import Network.Wai
+import Network.Wai.Handler.Warp
+import Servant
+import System.Directory
+import Text.Blaze
+import Text.Blaze.Html.Renderer.Utf8
+import qualified Data.Aeson.Parser
+import qualified Text.Blaze.Html
+import Data.Text
+
+import Role
+import Models
+
+import Servant.API
+#+END_SRC
+
+* REST
+
+
+** API Design
+
+  - URL :: /showRoles
+  - Method :: POST
+  - Headers :: 
+
+    + Cookie : <session_id>
+  - URL Params ::  
+    + email : <email_str>
+       
+  - Success Response ::
+    + Code: 200
+
+    + Content :: list of roles
+      #+BEGIN_EXAMPLE
+      [
+        {
+        "roles" :
+            { "role" : "Admin"},
+            { "role" : "NonAdmin"}
+        }
+      ]
+      #+END_EXAMPLE
+
+  - Error Response ::
+    + Code: 401 UNAUTHORIZED
+
+    OR
+
+    + Code: 400 Bad Request
+
+    OR
+
+    + Code: 500
+
+
+  - Example ::
+    #+BEGIN_EXAMPLE
+    http://localhost:8000/showRoles?email=<emal_str>
+    #+END_EXAMPLE
+
+** Implementation
+
+   API to Show all roles in the system. 
+#+NAME: show_roles
+#+BEGIN_SRC haskell
+
+type ShowRolesApi = Header "Cookie" String :> "showRoles" :> Capture "email" String :> Post '[JSON] [Role]
+#+END_SRC
+
+* Tangling
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle ShowRoles.hs
+
+<<extns_and_imports>>
+<<show_roles>>
+#+END_SRC

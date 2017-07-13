@@ -1,0 +1,213 @@
+#+TITLE: Consolidated API 
+
+
+* Introduction
+  
+Defines the routes used to interact with the system =User Directory=, and
+combines them into an API.
+
+The behaviour of the API - ie: it's structure, request arguments and return
+values - is implemented using types. 
+
+* Language Extensions and Imports 
+
+#+NAME: extns_and_imports
+#+BEGIN_SRC haskell 
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeOperators #-}
+
+module Api where
+
+import Prelude ()
+import Prelude.Compat
+
+import Control.Monad.Except
+import Control.Monad.Reader
+import Data.Aeson.Compat
+import Data.Aeson.Types
+import Data.Attoparsec.ByteString
+import Data.ByteString (ByteString)
+import Data.List
+import Data.Maybe
+import Data.String.Conversions
+import Data.Time.Calendar
+import GHC.Generics
+import Lucid
+import Network.HTTP.Media ((//), (/:))
+import Network.Wai
+import Network.Wai.Handler.Warp
+import Servant
+import System.Directory
+import Text.Blaze
+import Text.Blaze.Html.Renderer.Utf8
+import qualified Data.Aeson.Parser
+import qualified Text.Blaze.Html
+
+import Data.Proxy
+import Data.Text
+
+import Database.Persist
+
+import Models
+import Login
+import ShowUsers
+import LogoutApi
+import SetName
+import SetEmail
+import ShowUserDetails
+import AddUser
+import DeleteUser
+import ShowSessions
+import ShowRoles
+import AddRole
+import DeleteRole
+
+
+import Servant.API
+#+END_SRC
+
+* API 
+
+  - =NonSecureRoutes= defines the routes that do not require login
+    authorisation.
+  - =NonAdminRoutes= defines the routes that do not require =Admin=
+    authorisation.
+  - =AdminRoutes= defines the routes that require =Admin= authorisation
+  - =UserAPI= defines the main =API= structure. 
+ 
+#+NAME: combined_api
+#+BEGIN_SRC haskell
+type UserAPI = IndexApi 
+          :<|> LoginApi
+          :<|> ShowUsersApi
+          :<|> LogoutApi
+          :<|> SetNameApi
+          :<|> SetEmailApi
+          :<|> ShowUserDetailsApi
+          :<|> AddUserApi
+          :<|> DeleteUserApi
+          :<|> ShowSessionsApi
+          :<|> ShowRolesApi
+          :<|> AddRoleApi
+          :<|> DeleteRoleApi
+
+#+END_SRC
+
+* Tangling
+
+** =/addUser=
+
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle AddUser.hs
+<<extns_and_imports>>
+<<combined_api>>
+#+END_SRC
+
+** =/deleteUser=
+
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
+<<extns_and_imports>>
+<<combined_api>>
+#+END_SRC
+
+** =/showUserDetails=
+
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
+<<extns_and_imports>>
+<<combined_api>>
+#+END_SRC
+
+** =/showSessions=
+
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
+<<extns_and_imports>>
+<<combined_api>>
+#+END_SRC
+
+** =/showRoles=
+
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
+<<extns_and_imports>>
+<<combined_api>>
+#+END_SRC
+
+** =/addRole= 
+
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
+<<extns_and_imports>>
+<<combined_api>>
+#+END_SRC
+
+** =/deleteRole= 
+
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
+<<extns_and_imports>>
+<<combined_api>>
+#+END_SRC
+
+** =/logout=
+
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
+<<extns_and_imports>>
+<<combined_api>>
+#+END_SRC
+
+** =/showUsers=
+
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
+<<extns_and_imports>>
+<<combined_api>>
+#+END_SRC
+
+** =/setName=
+
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
+<<extns_and_imports>>
+<<combined_api>>
+#+END_SRC
+
+** =/setEmail=
+
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
+<<extns_and_imports>>
+<<combined_api>>
+#+END_SRC
+
+** =/index=
+
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
+<<extns_and_imports>>
+<<combined_api>>
+#+END_SRC
+
+** =/login=
+
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
+<<extns_and_imports>>
+<<combined_api>>
+#+END_SRC
+
+** Combined
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
+<<extns_and_imports>>
+<<combined_api>>
+#+END_SRC

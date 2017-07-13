@@ -1,136 +1,13 @@
-#+TITLE: Example Servant App
+#+TITLE: Consolidated API 
 
 
 * Introduction
+  
+Defines the routes used to interact with the system =User Directory=, and
+combines them into an API.
 
-Controllers for handling the following routes :
-
-** Routes not requiring authentication
-
-
-*** index
-
-   - URL :: /index
-
-   - Content Type :: None
-
-   - Data Params :: None
-
-   - Success Response ::
-        
-        + Response Code: 200
-        + Response type: text/plain;charset=utf-8
-        + Content:
-
-          #+BEGIN_EXAMPLE
-"Welcome to User Directory"
-          #+END_EXAMPLE
-
-   - Error Response ::
-
-        + Code: 405 Method Not Allowed
-
-*** login
-
-
-   - URL :: /login
-            
-   - Method :: POST
-
-   - Content Type :: application/json
-
-   - Data Params :: 
-       {
-         "email" : <user-email>,
-         "roles" :
-           {
-             "role" : <user-role>
-           }
-       }
-
-   - Success Response ::
-     + Code: 200
-     + Content: 
-
-       #+BEGIN_EXAMPLE
-
-    {
-        "SessionId" : <session-id>
-    }
-       #+END_EXAMPLE
-
-   - Error Response ::
-
-     + Code: 400 Bad Request
-     + Content: 
-       { errBody : "Malformed arguments"}
-
-** Routes requiring login authentication
-
-*** showUser
-
-
-  - URL :: /showUsers
-  - Method :: GET
-
-  - URL Params ::  None
-       
-  - Success Response ::
-   
-    + Content ::
-      #+BEGIN_EXAMPLE
-  [
-	{
-        email: "abc@xyz.com",
-        roles:
-            role: "NonAdmin"
-        name: "Abc Def"
-    }
-  ]  
-      #+END_EXAMPLE
-
-*** logout
-** Routes requiring admin authentication
-*** addUser
-
-   - URL :: /addUser
-
-   - Method :: POST
-
-   - Data Params ::
-     {
-      'name': '<value>',
-      'email': '<value>',
-     }
-
-   - Success Response ::
-     + <userId>
-
-*** deleteUser
-
-   - URL :: /deleteUser
-
-   - Method :: POST
-
-   - Data Params ::
-     {
-       "data" : <user-email>
-     }
-
-   - Success Response ::
-        
-        + Content ::
-          
-          #+BEGIN_EXAMPLE
-{
-    "email" : "smallcat@email.com"
-    "roles" :
-        {
-            "role" : NonAdmin
-        }
-    "name" : "Small Cat"
-}
-          #+END_EXAMPLE
+The behaviour of the API - ie: it's structure, request arguments and return
+values - is implemented using types. 
 
 * Language Extensions and Imports 
 
@@ -178,43 +55,275 @@ import Data.Text
 import Database.Persist
 
 import Models
-import SecureApi
+import NonSecureApi
+import NonAdminApi
+import AdminApi
+
+
 import Servant.API
+#+END_SRC
+
+* REST
+
+** =/setEmail=
+
+*** API Design
+
+  - URL :: /setEmail
+
+  - Method :: POST
+
+  - Data Params ::  
+    #+BEGIN_EXAMPLE
+    {
+    "current-data" : "small-cat@gmail.com",
+    "new-data" : "small@cat.com"    
+    }
+    #+END_EXAMPLE		   
+
+  - Success Response ::
+    + Code: 200
+
+    + Content ::
+      #+BEGIN_EXAMPLE
+    {
+	"name"  : "small-cat",
+    "email" : "small@cat.com",
+    "roles" :
+              {"role":"NonAdmin"}
+    }
+      #+END_EXAMPLE
+		
+  - Error Response ::
+    + Code: 401 
+
+    OR
+
+    + Code: 400 Bad Request
+
+    OR
+
+    + Code: 500
+
+    + Content: { error : Exception String}
+
+  - Example ::
+    #+BEGIN_EXAMPLE
+    http://localhost:8000/setEmail
+    #+END_EXAMPLE
+
+*** Implementation
+
+#+NAME: set_email
+#+BEGIN_SRC haskell
+
+type SetEmailApi = Header "Cookie" String :> "setEmail" :> ReqBody '[JSON] UpdateUserData :> Post '[JSON] (Maybe (User)) 
+
+#+END_SRC
+
+** =/index=
+
+Returns index page and welcome message
+
+#+NAME: index
+#+BEGIN_SRC haskell
+
+type IndexApi = "index" :> Get '[PlainText] Text
+
+#+END_SRC
+
+** =/login=
+
+API to login to the application.
+   
+*** API Design
+
+  - URL :: /login
+  - Method :: POST
+              
+  - Request Data Params ::
+                   
+     #+BEGIN_EXAMPLE
+     {
+        "userId" : "<value>",
+        "email"  : "<value>",
+        "roles"  : {
+                    "role": "<value"
+                   }
+     }
+     #+END_EXAMPLE		   
+       
+  - Success Response ::
+    + Code: 200
+
+    + Content :: Cookie - Id of Current Session
+      #+BEGIN_EXAMPLE
+    
+         {
+         "SessionId": 1
+         }
+ 
+      #+END_EXAMPLE
+
+  - Error Response ::
+
+    + Code: 400 Bad Request
+
+    OR
+
+    + Code: 500
+
+
+  - Example ::
+    #+BEGIN_EXAMPLE
+    http://localhost:8000/login
+    #+END_EXAMPLE
+
+*** Implementation
+
+#+NAME: login
+#+BEGIN_SRC haskell
+
+type LoginApi = "login" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (ResponseSessionId))
+
 #+END_SRC
 
 * API 
 
-** Routes not requiring authentication
-
-#+NAME: nonsecure_routes
-#+BEGIN_SRC haskell
-type NonSecureRoutes = "index" :> Get '[PlainText] Text
-          :<|> "login" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (ResponseSessionId))
-#+END_SRC
-** Routes requiring authentication
-
-#+NAME: secure_routes
-#+BEGIN_SRC haskell
+  - =NonSecureRoutes= defines the routes that do not require login
+    authorisation.
+  - =NonAdminRoutes= defines the routes that do not require =Admin=
+    authorisation.
+  - =AdminRoutes= defines the routes that require =Admin= authorisation
+  - =UserAPI= defines the main =API= structure. 
  
-type SecureRoutes = Header "Cookie" String :> "showUsers" :> Get '[JSON] [User]
-          :<|> Header "Cookie" String :> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (ResponseUserId))
-          :<|> Header "Cookie" String :> "deleteUser" :> ReqBody '[JSON] UniqueUserData :> Post '[JSON] (Maybe (User))
-          :<|> Header "Cookie" String :> "logout" :> ReqBody '[JSON] Session :> Post '[JSON] (Maybe (Session))
-             
-#+END_SRC
-** Combined API
-
 #+NAME: combined_api
 #+BEGIN_SRC haskell
-type UserAPI = NonSecureRoutes
-          :<|> SecureRoutes  
+type UserAPI = IndexApi 
+          :<|> LoginApi
+          :<|> ShowUsersApi
+          :<|> LogoutApi
+          :<|> SetNameApi
+          :<|> SetEmailApi
+          :<|> ShowUserDetailsApi
+          :<|> AddUserApi
+          :<|> DeleteUserApi
+          :<|> ShowSessionsApi
+          :<|> ShowRolesApi
+          :<|> AddRoleApi
+          :<|> DeleteRoleApi
 
 #+END_SRC
 
 * Tangling
 
+** =/addUser=
+
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle AddUser.hs
+<<extns_and_imports>>
+<<combined_api>>
+#+END_SRC
+
+** =/deleteUser=
+
+
 #+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
 <<extns_and_imports>>
-<<nonsecure_routes>>
+<<combined_api>>
+#+END_SRC
+
+** =/showUserDetails=
+
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
+<<extns_and_imports>>
+<<combined_api>>
+#+END_SRC
+
+** =/showSessions=
+
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
+<<extns_and_imports>>
+<<combined_api>>
+#+END_SRC
+
+** =/showRoles=
+
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
+<<extns_and_imports>>
+<<combined_api>>
+#+END_SRC
+
+** =/addRole= 
+
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
+<<extns_and_imports>>
+<<combined_api>>
+#+END_SRC
+
+** =/deleteRole= 
+
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
+<<extns_and_imports>>
+<<combined_api>>
+#+END_SRC
+
+** =/logout=
+
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
+<<extns_and_imports>>
+<<combined_api>>
+#+END_SRC
+
+** =/showUsers=
+
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
+<<extns_and_imports>>
+<<combined_api>>
+#+END_SRC
+
+** =/setName=
+
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
+<<extns_and_imports>>
+<<combined_api>>
+#+END_SRC
+
+** =/setEmail=
+
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
+<<extns_and_imports>>
+<<combined_api>>
+#+END_SRC
+
+** =/index=
+
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
+<<extns_and_imports>>
+<<combined_api>>
+#+END_SRC
+
+** =/login=
+
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
+<<extns_and_imports>>
+<<combined_api>>
+#+END_SRC
+
+** Combined
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle Api.hs
+<<extns_and_imports>>
 <<combined_api>>
 #+END_SRC

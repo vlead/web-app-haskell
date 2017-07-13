@@ -1,0 +1,113 @@
+#+TITLE: Set Email Api
+
+
+* Language Extensions and Imports
+  
+
+#+NAME: extns_and_imports
+#+BEGIN_SRC haskell 
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeOperators #-}
+
+module SetEmail where
+
+import Prelude ()
+import Prelude.Compat
+
+import Control.Monad.Except
+import Control.Monad.Reader
+import Data.Aeson.Compat
+import Data.Aeson.Types
+import Data.Attoparsec.ByteString
+import Data.ByteString (ByteString)
+import Data.List
+import Data.Maybe
+import Data.String.Conversions
+import Network.HTTP.Media ((//), (/:))
+import Network.Wai
+import Network.Wai.Handler.Warp
+import Servant
+import System.Directory
+import Text.Blaze
+import Text.Blaze.Html.Renderer.Utf8
+import qualified Data.Aeson.Parser
+import qualified Text.Blaze.Html
+import Data.Text
+import Servant.Api
+
+import Models
+
+import Servant.API
+#+END_SRC
+
+* REST
+
+
+** API Design
+
+  - URL :: /setEmail
+
+  - Method :: POST
+
+  - Data Params ::  
+    #+BEGIN_EXAMPLE
+    {
+    "current-data" : "small-cat@gmail.com",
+    "new-data" : "small@cat.com"    
+    }
+    #+END_EXAMPLE		   
+
+  - Success Response ::
+    + Code: 200
+
+    + Content ::
+      #+BEGIN_EXAMPLE
+    {
+	"name"  : "small-cat",
+    "email" : "small@cat.com",
+    "roles" :
+              {"role":"NonAdmin"}
+    }
+      #+END_EXAMPLE
+		
+  - Error Response ::
+    + Code: 401 
+
+    OR
+
+    + Code: 400 Bad Request
+
+    OR
+
+    + Code: 500
+
+    + Content: { error : Exception String}
+
+  - Example ::
+    #+BEGIN_EXAMPLE
+    http://localhost:8000/setEmail
+    #+END_EXAMPLE
+
+** Implementation
+
+#+NAME: set_email
+#+BEGIN_SRC haskell
+
+type SetEmailApi = Header "Cookie" String :> "setEmail" :> ReqBody '[JSON] UpdateUserData :> Post '[JSON] (Maybe (User)) 
+
+#+END_SRC
+
+* Tangling
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle SetEmail.hs
+
+<<extns_and_imports>>
+<<set_email>>
+
+#+END_SRC

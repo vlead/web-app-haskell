@@ -1,0 +1,16 @@
+#+TITLE: Main Module
+
+* Running The App
+  
+#+NAME: app_running
+#+BEGIN_SRC haskell :tangle Main.hs
+module Main where
+
+import           App
+
+    
+main = do
+  run "sqlite.db"
+                
+  
+#+END_SRC

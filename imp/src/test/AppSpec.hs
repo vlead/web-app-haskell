@@ -123,7 +123,7 @@ userAPI = Data.Proxy.Proxy
 
 
 -- code that returns the client functions for our API
-(testIndex :<|>  testLogin) :<|> (testShowUsers :<|> testLogout :<|> testSetName :<|> testSetEmail) :<|> (testShowUserDetails :<|> testAddUser :<|> testDeleteUser :<|> testShowSessions :<|> testShowRoles :<|> testAddRole :<|> testDeleteRole) = client userAPI 
+testIndex :<|>  testLogin :<|> testShowUsers :<|> testLogout :<|> testSetName :<|> testSetEmail :<|> testShowUserDetails :<|> testAddUser :<|> testDeleteUser :<|> testShowSessions :<|> testShowRoles :<|> testAddRole :<|> testDeleteRole = client userAPI 
 
  
 spec :: Spec

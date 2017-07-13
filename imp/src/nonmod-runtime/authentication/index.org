@@ -1,0 +1,11 @@
+#+TITLE: Authentication Functions For User Directory Application
+
+
+The =Authentication= package contains authentication utility functions that are
+used to confirm or deny if a logged-in user - identified by the =Session=
+associated with the user, which is accessed via the provided =SessionId= - has permission to access a
+particular route.
+
+The package holds one module.
+
+  - [[file:Authentication.org][Authentication]]

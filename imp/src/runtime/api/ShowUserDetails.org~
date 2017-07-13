@@ -1,0 +1,105 @@
+#+TITLE: Show User Details Api
+
+* Language Extensions and Imports
+
+
+#+NAME: extns_and_imports
+#+BEGIN_SRC haskell 
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeOperators #-}
+
+module AddUser where
+
+import Prelude ()
+import Prelude.Compat
+
+import Control.Monad.Except
+import Control.Monad.Reader
+import Data.Aeson.Compat
+import Data.Aeson.Types
+import Data.Attoparsec.ByteString
+import Data.ByteString (ByteString)
+import Data.List
+import Data.Maybe
+import Data.String.Conversions
+import Network.HTTP.Media ((//), (/:))
+import Network.Wai
+import Network.Wai.Handler.Warp
+import Servant
+import System.Directory
+import Text.Blaze
+import Text.Blaze.Html.Renderer.Utf8
+import qualified Data.Aeson.Parser
+import qualified Text.Blaze.Html
+import Data.Text
+import Servant.Api
+
+import Models
+
+import Servant.API
+#+END_SRC
+* REST
+
+
+** API Design
+  - URL :: /show_user_details?email=<email_str>
+  - Method :: GET
+  - Headers ::
+
+    + Cookie : <session_id>
+  - URL Params :: 
+  
+    + "email" : <email_str>
+   
+  - Success Response ::
+    + Code: 200
+
+    + Content :: user with roles
+      #+BEGIN_EXAMPLE
+    {
+        "email" : <email>,
+        "name"  : <name>,
+        "roles" :
+            [
+                {"role" : <role>}
+            ]
+    }
+      #+END_EXAMPLE
+
+  - Error Response ::
+    + Code: 401 UNAUTHORIZED
+
+    OR
+
+    + Code: 400 Bad Request
+
+    OR
+
+    + Code: 500
+
+  - Example ::
+    #+BEGIN_EXAMPLE
+    http://localhost:8000/showUserDetails?email=<email_str>
+    #+END_EXAMPLE
+
+** Implementation
+#+NAME: show_user_details
+#+BEGIN_SRC haskell
+
+type ShowUserDetailsApi = Header "Cookie" String :> "showUserDetails" :> Capture "email" String :> Post '[JSON] (Maybe (User))
+#+END_SRC
+
+* Tangling
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle ShowUserDetails.hs
+
+<<extns_and_imports>>
+<<showUserDetails>>
+
+#+END_SRC

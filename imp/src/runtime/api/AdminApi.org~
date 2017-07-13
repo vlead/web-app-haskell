@@ -1,0 +1,448 @@
+#+TITLE: Api Routes Protected By Admin Auth
+
+
+* Introduction 
+
+Defining the portion of the Api that requires Admin auth to access.
+
+* Language Extensions and Imports 
+
+#+NAME: extns_and_imports
+#+BEGIN_SRC haskell 
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeOperators #-}
+
+module AdminApi where
+
+import Prelude ()
+import Prelude.Compat
+
+import Control.Monad.Except
+import Control.Monad.Reader
+import Data.Aeson.Compat
+import Data.Aeson.Types
+import Data.Attoparsec.ByteString
+import Data.ByteString (ByteString)
+import Data.List
+import Data.Maybe
+import Data.String.Conversions
+import Data.Time.Calendar
+import GHC.Generics
+import Lucid
+import Network.HTTP.Media ((//), (/:))
+import Network.Wai
+import Network.Wai.Handler.Warp
+import Servant
+import System.Directory
+import Text.Blaze
+import Text.Blaze.Html.Renderer.Utf8
+import qualified Data.Aeson.Parser
+import qualified Text.Blaze.Html
+
+import Data.Proxy
+import Data.Text
+
+import Database.Persist
+
+import Models
+import Role
+
+import Servant.API
+#+END_SRC
+* REST
+
+** =/addUser=
+
+*** API Design
+
+  - URL :: /addUser
+  - Method :: POST
+
+  - Request Headers ::
+    + Content-type: application/json
+    + Cookie: "value"
+
+  - Data Params :: 
+    #+BEGIN_EXAMPLE
+    {
+    "name"  : <value>,
+    "email" : <value>,
+    "roles" : {"role" : <value> }
+    }
+    #+END_EXAMPLE
+       
+  - Success Response ::
+    + Code: 200
+
+    + Content :: ID of User
+      #+BEGIN_EXAMPLE
+    {"UserId" : <value> }
+      #+END_EXAMPLE
+
+  - Error Response ::
+    + Code: 401 
+
+    OR
+
+    + Code: 400 Bad Request
+
+    OR
+
+    + Code: 500
+
+  - Example ::
+    #+BEGIN_EXAMPLE
+    http://localhost:8000/showUsers
+    #+END_EXAMPLE
+
+*** Implementation
+
+#+NAME: addUser
+#+BEGIN_SRC haskell
+
+type AddUserApi = Header "Cookie" String :> "addUser" :> ReqBody '[JSON] User :> Post '[JSON] (Maybe (ResponseUserId))
+
+#+END_SRC
+
+** =/deleteUser=
+
+*** API Design
+
+  - URL :: /deleteUser
+  - Method :: POST
+
+  - Request Headers ::
+    + Content-type: application/json
+    + Cookie: "value"
+
+  - Data Params :: 
+    #+BEGIN_EXAMPLE
+    {
+    "data" : "<email of user to be deleted>"
+    }
+    #+END_EXAMPLE
+       
+  - Success Response ::
+    + Code: 200
+
+    + Content :: ID of User
+      #+BEGIN_EXAMPLE
+    {"name"  : <value>,
+     "email" : <value>,
+     "roles" : { "role" : "<value" }
+    }
+      #+END_EXAMPLE
+
+  - Error Response ::
+    + Code: 401 
+
+    OR
+
+    + Code: 400 Bad Request
+
+    OR
+
+    + Code: 500
+
+  - Example ::
+    #+BEGIN_EXAMPLE
+    http://localhost:8000/deleteUser
+    #+END_EXAMPLE
+
+*** Implementation
+
+#+NAME: delete_user
+#+BEGIN_SRC haskell
+
+type DeleteUserApi = Header "Cookie" String :> "deleteUser" :> ReqBody '[JSON] UniqueUserData :> Post '[JSON] (Maybe (User))
+
+#+END_SRC
+
+** =/showUserDetails=
+
+API to show user details
+
+*** API Design
+  - URL :: /show_user_details?email=<email_str>
+  - Method :: GET
+  - Headers ::
+
+    + Cookie : <session_id>
+  - URL Params :: 
+  
+    + "email" : <email_str>
+   
+  - Success Response ::
+    + Code: 200
+
+    + Content :: user with roles
+      #+BEGIN_EXAMPLE
+    {
+        "email" : <email>,
+        "name"  : <name>,
+        "roles" :
+            [
+                {"role" : <role>}
+            ]
+    }
+      #+END_EXAMPLE
+
+  - Error Response ::
+    + Code: 401 UNAUTHORIZED
+
+    OR
+
+    + Code: 400 Bad Request
+
+    OR
+
+    + Code: 500
+
+  - Example ::
+    #+BEGIN_EXAMPLE
+    http://localhost:8000/showUserDetails?email=<email_str>
+    #+END_EXAMPLE
+
+*** Implementation
+#+NAME: show_user_details
+#+BEGIN_SRC haskell
+
+type ShowUserDetailsApi = Header "Cookie" String :> "showUserDetails" :> Capture "email" String :> Post '[JSON] (Maybe (User))
+#+END_SRC
+
+** =/showSessions=
+
+API to Show Sessions
+
+*** API Design
+  - URL :: /showSessions
+  - Method :: POST
+  - Header ::
+
+    - Cookie : <session-id>
+
+  - URL Params ::  None
+       
+  - Success Response ::
+    + Code: 200
+
+    + Content :: list of sessions
+      #+BEGIN_EXAMPLE
+   [
+    {
+        "email" : <user_email>
+        "role"  : <list_of_roles>
+    }
+   ]
+      #+END_EXAMPLE
+
+  - Error Response ::
+    + Code: 401 UNAUTHORIZED
+
+    OR
+
+    + Code: 400 Bad Request
+
+    OR
+
+    + Code: 500
+
+  - Example ::
+    #+BEGIN_EXAMPLE
+    http://localhost:8000/showSessions
+    #+END_EXAMPLE
+
+*** Implementation
+
+#+NAME: show_sessions
+#+BEGIN_SRC haskell
+
+type ShowSessionsApi = Header "Cookie" String :> "showSessions" :> Post '[JSON] [Session]
+#+END_SRC
+
+** =/showRoles=
+
+*** API Design
+
+  - URL :: /showRoles
+  - Method :: POST
+  - Headers :: 
+
+    + Cookie : <session_id>
+  - URL Params ::  
+    + email : <email_str>
+       
+  - Success Response ::
+    + Code: 200
+
+    + Content :: list of roles
+      #+BEGIN_EXAMPLE
+      [
+        {
+        "roles" :
+            { "role" : "Admin"},
+            { "role" : "NonAdmin"}
+        }
+      ]
+      #+END_EXAMPLE
+
+  - Error Response ::
+    + Code: 401 UNAUTHORIZED
+
+    OR
+
+    + Code: 400 Bad Request
+
+    OR
+
+    + Code: 500
+
+
+  - Example ::
+    #+BEGIN_EXAMPLE
+    http://localhost:8000/showRoles?email=<emal_str>
+    #+END_EXAMPLE
+
+*** Implementation
+   API to Show all roles in the system. 
+#+NAME: show_roles
+#+BEGIN_SRC haskell
+
+type ShowRolesApi = Header "Cookie" String :> "showRoles" :> Capture "email" String :> Post '[JSON] [Role]
+#+END_SRC
+
+** =/addRole= 
+
+API to add a role to a user.
+
+*** API Design
+
+  - URL :: /addRole
+  - Method :: GET
+
+  - URL Params ::  
+    #+BEGIN_EXAMPLE
+      "email" : "xyz@gmail.com",
+      "role" : "admin"      
+    #+END_EXAMPLE
+
+  - Success Response ::
+    + Code: 200
+
+    + Content ::
+      #+BEGIN_EXAMPLE
+      {
+        "email" : <email>,
+        "name"  : <name>,
+        "roles" :
+            [
+                {"role" : "Admin"},
+                {"role" : "NonAdmin"}
+            ]
+	  }
+      #+END_EXAMPLE
+
+  - Error Response ::
+    + Code: 401 UNAUTHORIZED
+
+    OR
+
+    + Code: 400 Bad Request
+
+    OR
+
+    + Code: 500
+
+  - Example ::
+    #+BEGIN_EXAMPLE
+    http://localhost:8000/addRole
+    #+END_EXAMPLE
+*** Implementation
+#+NAME: add_role
+#+BEGIN_SRC haskell
+
+type AddRoleApi = Header "Cookie" String :> "addRole" :> Capture "email" String :> Capture "role" Role :> Post '[JSON] (Maybe (User))
+#+END_SRC
+
+** =/deleteRole= 
+
+API to delete a role of a user.
+
+*** API Design
+
+  - URL :: /deleteRole
+  - Method :: Get
+
+  - URL Params ::  
+    #+BEGIN_EXAMPLE
+    "email" : "xyz@gmail.com",
+    "role" : "admin"
+    #+END_EXAMPLE		   
+  - Success Response ::
+    + Code: 200
+
+    + Content ::
+      #+BEGIN_EXAMPLE
+    {
+        "email" : <email>,
+        "name"  : <name>,
+        "roles" :
+            [
+                {"role" : "Admin"}
+            ]
+    }
+      #+END_EXAMPLE
+
+  - Error Response ::
+    + Code: 401 UNAUTHORIZED
+
+    OR
+
+    + Code: 400 Bad Request
+
+    OR
+
+    + Code: 500
+
+  - Example ::
+    #+BEGIN_EXAMPLE
+    http://localhost:8000/deleteRole
+    #+END_EXAMPLE
+*** Implementation
+
+#+NAME: delete_role
+#+BEGIN_SRC haskell
+
+type DeleteRoleApi = Header "Cookie" String :> "deleteRole" :> Capture "email" String :> Capture "role" Role :> Post '[JSON] (Maybe (User))
+
+#+END_SRC
+
+* API
+
+Combining the above APIs into one type.
+
+#+NAME: admin_routes
+#+BEGIN_SRC haskell
+
+type AdminRoutes = ShowUserDetailsApi :<|> AddUserApi :<|> DeleteUserApi :<|> ShowSessionsApi :<|> ShowRolesApi :<|> AddRoleApi :<|> DeleteRoleApi
+
+#+END_SRC
+* Tangling
+
+#+BEGIN_SRC haskell :eval no :noweb yes :tangle AdminApi.hs 
+<<extns_and_imports>>
+<<addUser>>
+<<delete_user>>
+<<show_user_details>>
+<<show_sessions>>
+<<show_roles>>
+<<add_role>>
+<<delete_role>>
+<<admin_routes>>
+#+END_SRC
