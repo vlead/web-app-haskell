@@ -1,0 +1,12 @@
+#+TITLE: Web App In Haskell - Comparison Study
+
+
+Building a proof-of-concept of a web application in Haskell, and comparison
+with the equivalent webapp written in Python.
+
+
+The report of the study is in =./study/report.org=
+
+The requirements for the webapp is in =./req/Req.org=
+
+The implementation of the app is in =./imp=

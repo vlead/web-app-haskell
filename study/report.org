@@ -1,0 +1,128 @@
+#+TITLE: Building Systems in Haskell - Advantages and Disadvantages
+
+
+* Introduction
+
+There is a lot of discussion about the pros and cons of various languages. When
+it comes to the domain of web development, Javascript, Java, PHP, Python, etc
+are the languages of choice. Much of Virtual Labs' infrastructure is built in
+Python and Javascript.
+
+Haskell - a pure functional language- has not seen much use in this
+domain. However, there are features of Haskell that make it ideal for building
+web applications- conciseness, type-safety, higher-order abstraction preventing
+repetition of code, the monad construct, etc..
+
+* Aim 
+
+The aim of this paper is twofold:
+
+  1) To implement a proof-of-concept of a typical web application in Haskell
+  2) To perform a comparison study between two implementations of the same set
+     of requirements in two different languages- in Haskell and in Python.
+* The Requirements
+
+
+The requirements are - to build a web application that has persistence of data,
+performs CRUD operations on the data,
+and interacts with the user via a REST API. The full description of
+requirements is given [[file:.Req.org][here.]]
+
+The given implementation does not feature deployment or a frontend.
+
+* Why Haskell
+
+Python has the following features:
+
+  - Dynamic typing, and therefore the absence of type-checks
+  - Primarily object-oriented (Python supports a number of paradigms through
+    libraries, but is primarily an object-oriented language)
+  - Imperative
+
+Haskell, on the other hand, has the following features:
+
+  - Static typing- typechecks done on compilation
+  - Pure functional
+  - Declarative
+  - Supports a complex and robust type system, which is not seen in the above
+    languages
+* Comparison
+
+This section compares aspects of the implementations in Python and in Haskell.
+
+** Program Length
+
+A crude measure of the size of the final software is non-whitespace non-comment
+lines of code.
+
+LOC for Haskell program: 1,205
+LOC for Python program: 4,802
+
+The final size of code of the Haskell program is one-fourth the size of the
+Python program, thus suggesting that Haskell is a more concise and expressive
+language (Same set of requirements expressed in lesser size of code.)
+
+** Modularisability
+
+For building industrial-standard code, modularisability is
+essential. Well-structured, modularised code ensures:
+
+  1) Easy extending and refactoring
+  2) Adheres to the Microservices framework
+  3) Easy maintenance and bug testing (ability to localise bugs to one module
+     of code)
+
+Here, we provide two examples of how Haskell allows easier modularisation of
+code than the equivalent Python code:
+
+
+*** Combinators 
+
+    - Allows each API route to be defined modularly 
+    - Allows each API controller to be defined modularly and assembled into a
+      combined controller function at the end
+
+*** No Side-Effects
+
+    - A function only affects data that has been passed to it
+    - Therefore no worrying about side-effects
+    - Therefore each controller/handler can be defined separately without interacting
+      with the other controllers/handlers
+
+** Type-Safety
+
+*** Haskell
+
+In Haskell, commands as well as data are inherently "type-safe" - i.e: checking
+that commands are well-formed and that each method is handling the correct type
+of data is done by the compiler at compile-time.
+
+Examples of type-safety:
+
+  - The API routes are defined as types, thus ensuring that cookie data, request data and
+    response data are only accepted if of the correct type. 
+  - The presence of type signatures on functions ensures that each function
+    only handles the correct type of data- thus, for example, a function
+    =addUser= cannot accept data of type =Session=
+*** Python
+
+In Python, type-safety is not checked at compile-time. Type-checking must be
+encoded by the programmer, in the form of type-checking and type-validation
+functions. Python, being an interpreted and dynamically-typed language, does
+not have an analogue to Haskell's type system.
+
+* Issues and Further Work
+
+The comparision of the two languages is in the preliminary stage.
+
+The following issues must be addressed in the comparision:
+
+  1) The presence of confounding factors has not been accounted for. 
+     - Programmer-related factors
+     - Library-related factors: i.e. the observed results may be in large part
+     due to the libraries used
+     - Differences between different implementations within the same language may
+     be more significant than differences between implementations in different
+     languages
+  2) More metrics- such as cyclomatic complexity, and runtime for each request-
+     need to be tested for.
