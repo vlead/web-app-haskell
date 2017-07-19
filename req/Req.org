@@ -1,0 +1,244 @@
+#+TITLE: Requirements for the User Directory Application
+#+AUTHOR: VLEAD
+#+DATE: [2016-05-11 Wed]
+#+PROPERTY: results output
+#+PROPERTY: exports code
+#+SETUPFILE: ../org-templates/level-1.org
+#+options: ^:nil
+#+LATEX: Literal LaTeX code for export
+
+* Application:  A web-based directory of users
+:PROPERTIES:
+:CUSTOM_ID: requirements
+:END: 
+ The application is a simple directory of users and some related
+ information (name and email).  The system has users.  There is a
+ special user called =admin-user=.  Once a user is logged in, the
+ system allows for the following /operations/
+
+  1. Viewing the details of a user,
+  2. Creating a user,
+  3. Updating the details of that user,
+  4. Deleting a user.  
+
+All interaction is via a login session.  That is, users need
+to log in before they can perform any operation.  Which
+operation may be executed on what entity depends on both
+that entity and the user who is logged in.  For example, if
+user =u= is logged in, he/she may modify the details of user
+=v= iff either =u = v= or =u = admin=.
+
+The rest of the sections have more detailed requirements. 
+
+
+* User
+:PROPERTIES:
+:CUSTOM_ID: req_user
+:END: 
+  User is an entity in the system.  There are several user(s) in the system
+  whose type is =User=.  The interaction of a user with the system is defined
+  by the requirements below. 
+
+  Realized in data model as [[../data-model/index.org::#entity_user][User]]
+
+** Composition
+:PROPERTIES:
+:CUSTOM_ID: req_user_composition
+:END: 
+   The system has users.
+   Realized in data model as [[../data-model/index.org::#user_session_sets][user-set]]
+** User Identification
+:PROPERTIES:
+:CUSTOM_ID: req_user_identification
+:END: 
+   Each user has an email address (string that corresponds to a
+   valid email addr).  
+
+   Realized in data model as [[../data-model/index.org::#cardinal_constraints][cardinality]] and [[../data-model/index.org::#referential_constraints][referential]] constraints on [[../data-model/index.org::#entity_email][Email]]
+   entity.
+
+** Uniqueness of a User
+:PROPERTIES:
+:CUSTOM_ID: req_user_uniqueness
+:END: 
+   Email identifies a user.  Two users with the same email
+   are the same users. 
+
+   Realized in data model as [[../data-model/index.org::#cardinal_constraints][cardinality]] and [[../data-model/index.org::#referential_constraints][referential]] constraints on [[../data-model/index.org::#entity_email][Email]]
+   entity.
+
+** Name Attribute
+:PROPERTIES:
+:CUSTOM_ID: req_user_name
+:END: 
+   Each user has a Name (string).
+
+      Realized in data model as [[../data-model/index.org::#cardinal_constraints][cardinality]] and [[../data-model/index.org::#referential_constraints][referential]] constraints on [[../data-model/index.org::#entity_name][Name]] entity.
+
+** Role of a User
+:PROPERTIES:
+:CUSTOM_ID: req_user_role
+:END: 
+   Each user has one or more role, and by default when a user is created, the
+   role that is associated with the newly created user is =user=
+   
+   Realized in data model as [[../data-model/index.org::#cardinal_constraints][cardinality]] and [[../data-model/index.org::#referential_constraints][referential]] constraints on [[../data-model/index.org::#entit_role][Role]]
+   entity.
+
+
+* Role
+:PROPERTIES:
+:CUSTOM_ID: req_role
+:END: 
+  Different privileges for accessing the system is maintained by roles.  A role
+  whose type is =Role= defines a set of privileges i.e. what is accessible and
+  what is not accessible in the system.
+
+  Realized in data model as [[../data-model/index.org::#entity_role][Role]]
+
+** Role Mapping to a User
+:PROPERTIES:
+:CUSTOM_ID: req_role_mapping_to_user
+:END: 
+   Each user is mapped to exactly one role in a given session, In any given
+   session, a user is mapped to only one of the roles associated with that
+   user 
+
+   Realized in data model as [[../data-model/index.org::#cardinal_constraints][cardinalility]] and [[../data-model/index.org::#referential_constraints][referential]] constraints on [[../data-model/index.org::#entity_role][Role]] and
+   [[../data-model/index.org::#entity_user][User]] entities.
+
+
+** Types of Roles
+:PROPERTIES:
+:CUSTOM_ID: req_role_types
+:END: 
+   There are 2 kinds of roles: =admin= and =user=.  Each role determines what
+   data access privileges are available to the user.   
+
+
+** Role Privileges
+:PROPERTIES:
+:CUSTOM_ID: req_role_privileges
+:END:    
+
+   1. A user with role =admin= has the ability to:
+
+      1. Create a new user, Read and Update information of all users, and
+         Delete all other users.
+
+   2. A user with role =user= has the ability to:
+
+      1. View certain information of other users in the system.
+
+      2. Update his/her information. 
+      
+
+** User with =admin= role
+:PROPERTIES:
+:CUSTOM_ID: req_role_admin
+:END:    
+   There is atleast one user with role =admin= in the system.
+
+   Realized in data model as an [[../data-model/index.org::#admin_user][admin user]]
+
+
+* Session
+:PROPERTIES:
+:CUSTOM_ID: req_session
+:END: 
+  A session defines the set of actions that a user is allowed to perform.
+  Realized in datamodel as [[../data-model/index.org::#entity_session][Session]]
+
+** Login is Mandatory
+:PROPERTIES:
+:CUSTOM_ID: req_session_login
+:END: 
+   Users are required to login to the system.
+   
+   Realized in data model as [[../data-model/index.org::#user_session_sets][session-set]]
+
+** A logged user and a session
+:PROPERTIES:
+:CUSTOM_ID: req_session_association
+:END: 
+   Each user once logged in is associated with a session.
+
+   Realized in data model as [[../data-model/index.org::#cardinal_constraints][cardinality]] and [[../data-model/index.org::#referential_constraints][referential]] constraints on
+   [[../data-model/index.org::#entity_session][Session]] entity.
+
+** Constraints
+:PROPERTIES:
+:CUSTOM_ID: req_session_constraints
+:END: 
+   A user can have more than one session, but no two session of a same user can
+   have the same role. Realized in data model as [[../data-model/index.org::#cardinal_constraints][cardinality]] and [[../data-model/index.org::#referential_constraints][referential]]
+   constraints on [[../data-model/index.org::#entity_session][Session]] entity.
+
+** Privileges
+:PROPERTIES:
+:CUSTOM_ID: req_session_privileges
+:END: 
+   Operations are permitted only if the user is logged into the system.
+
+   
+* Interaction with the system and privileges
+
+|-----------------------------------------+-------+--------------------------+------------------------|
+| Operation                               | Actor | Permission               | Other Constraints      |
+|-----------------------------------------+-------+--------------------------+------------------------|
+| Create a user                           | =a=   | =a='s role is =admin=    |                        |
+|-----------------------------------------+-------+--------------------------+------------------------|
+| Delete a user =u=                       | =a=   | =a='s role is =admin=    |                        |
+|                                         |       | AND =u= is not =a=.      |                        |
+|-----------------------------------------+-------+--------------------------+------------------------|
+| Update the name and email of a user =u= | =a=   | =a= is equal to =u=      |                        |
+|                                         |       | OR =a='s role is =admin= |                        |
+|-----------------------------------------+-------+--------------------------+------------------------|
+| Update or delete a role of a user =u=   | =a=   | =a='s role is =admin=    |                        |
+|                                         |       |                          |                        |
+|-----------------------------------------+-------+--------------------------+------------------------|
+| View the list of users                  | =a=   | always allowed           | The details contain    |
+|                                         |       |                          | only name and email    |
+|                                         |       |                          | and not role           |
+|-----------------------------------------+-------+--------------------------+------------------------|
+| view the details of a user              | =a=   | =a= is equal to =u=      | The details contian    |
+|                                         |       | OR =a='s role is =admin= | name, email and roles. |
+|-----------------------------------------+-------+--------------------------+------------------------|
+
+
+* Questions/scenarios
+
+** Deleting oneself?  
+:PROPERTIES:
+:CUSTOM_ID: delete-user-q
+:END:
+
+- Question :: Can a user delete himself/herself?
+- Ans :: No
+
+
+** No user with admin role? 
+:PROPERTIES:
+:CUSTOM_ID: user-with-admin-role
+:END:
+
+- Question :: Is it possible for the system to have no user
+     with role admin?
+
+- Answer :: No.  There is at least one user in the system with role =admin=.
+     This is ensured by: 
+  1. configuring the system with an initial user with role
+  2. Only a user with =admin= role can delete a user and
+  3. [[./index.org::#delete-user-q][A user cannot delete himself/herself]]
+
+
+** Multiple sessions for same user?   
+
+   - Question :: Is it possible for a user to be simultaneously logged in into
+        the system in two different sessions?
+
+   - Answer :: Yes, but each session of a user is mapped to a different role.
+
+
+
+   

@@ -1,0 +1,12 @@
+#+TITLE: App - Integrating all the components
+#+AUTHOR: Atreyee Ghosal
+
+
+The =App= package contains the integration of all the components for the
+application.
+
+The package contains the following components:
+
+  - [[file:App.org][=App=]]
+
+  - [[file:Main.org][=Main=]]

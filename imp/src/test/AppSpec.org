@@ -3,7 +3,7 @@
 
 * Language Extensions and Imports
 
-#+NAME: extns_and_imports
+#+NAME: exiting_and_imports
 #+BEGIN_SRC haskell
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}

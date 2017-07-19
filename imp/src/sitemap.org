@@ -13,10 +13,10 @@
        + [[file:runtime/api/NonSecureRoutes.org][Api Routes Not Protected By Auth]]
        + [[file:runtime/api/AdminApi.org][Api Routes Protected By Admin Auth]]
        + [[file:runtime/api/NonAdminApi.org][Api Routes Protected By NonAdmin Auth]]
-       + [[file:runtime/api/Api.org][Example Servant App]]
-       + [[file:runtime/api/index.org][Integration Of Componenets For User Directory Application]]
+       + [[file:runtime/api/Api.org][Consolidated API]]
+       + [[file:runtime/api/index.org][REST API Definitions for App]]
      + app
-       + [[file:runtime/app/index.org][API For User Directory Application]]
+       + [[file:runtime/app/index.org][index]]
        + [[file:runtime/app/App.org][App]]
        + [[file:runtime/app/Main.org][Main Module]]
      + authentication

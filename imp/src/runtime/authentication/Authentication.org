@@ -61,7 +61,7 @@ module Authentication where
 
 import           Control.Monad.IO.Class
 import           Control.Monad.Logger (runStderrLoggingT)
-
+import           Text.Regex.Posix
 import           Data.String.Conversions
 import qualified Data.ByteString.Lazy.Char8 as B           
 
@@ -127,6 +127,18 @@ headerCheck authVal = case authVal of
 
 The functions for returning authentication status (True/False).
 
+** isEmail
+
+Utility authentication function for returning whether or not a value of type
+=UserEmail= has the correct format.
+
+#+BEGIN_SRC haskell
+
+isEmail :: String -> Maybe (String)
+isEmail email = x
+
+#+END_SRC
+** hasRole
 
 To check whether the user being logged in with a given =Role= has that role
 belonging to said user:
@@ -150,6 +162,8 @@ hasRole pool session = flip runSqlPersistMPool pool $ do
       
 #+END_SRC
 
+** loginCheck
+
 To check whether an user is logged-in - i.e: whether the session passed by the
 user is in =Session= database:
 
@@ -165,6 +179,7 @@ loginCheck pool authSessionId = flip runSqlPersistMPool pool $ do
 
 #+END_SRC
 
+** adminAuthCheck
 
 To check whether a user is logged-in with =Admin= role:
 
@@ -181,6 +196,7 @@ adminAuthCheck pool authSessionId = flip runSqlPersistMPool pool $ do
                         [Admin]    -> return True
 #+END_SRC
 
+** isSelfCheck
 
 To check if logged-in user is the same as user passed to the function:
 
@@ -198,6 +214,7 @@ isSelfCheck pool userData authSessionId = flip runSqlPersistMPool pool $ do
 
 #+END_SRC                        
 
+** isEitherAdminOrSelfCheck
 
 To check if logged-in user either has =Admin= role or is same as user passed to
 the function:
@@ -224,6 +241,7 @@ isEitherAdminOrSelfCheck pool userData authSessionId = flip runSqlPersistMPool p
   
 #+END_SRC
 
+** isNotAdminSelfCheck
 
 To check if logged-in user has =Admin= role and is not the same as user passed
 to the function:
